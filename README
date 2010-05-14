@@ -1,0 +1,54 @@
+OpenVPN auth-mysql plugin.
+
+auth-mysql.c -- main plugin file
+sqlstuff.c/h -- all the MySQL part (?! TODO: Porting to pgsql ?!)
+rconf.c/h    -- config file parser
+
+To build:
+	cp -R auth-mysql-x.y /path/to/openvpn-2.0.z/plugin/auth-mysql
+	(cd /path/to/openvpn-2.0.z/plugin/auth-mysql/ ; make)
+	cp /path/to/openvpn-2.0.z/plugin/auth-mysql/openvpn-auth-mysql.so /path/to/openvpn/libs/
+
+To use in OpenVPN:
+
+if you want to use this authentication AND the ssl one,
+just add this line in your conf:
+
+	plugin /usr/local/lib/openvpn-auth-mysql.so
+
+if you want only mysql authentication (a bit more insecure),
+place theses lines in your server config file:
+
+	client-cert-not-required
+	username-as-common-name
+	plugin /usr/local/lib/openvpn-auth-mysql.so
+	dh dh1024.pem
+	ca ca.crt 	# should keep these two files
+
+and only specify the ca in your client's config file,
+and the login password like the openvpn's manpage describe:
+
+       --auth-user-pass [up]
+              Authenticate  with  server  using username/password.  up is a file containing
+              username/password on 2 lines (Note: OpenVPN will only read passwords  from  a
+              file  if  it has been built with the --enable-password-save configure option,
+              or on Windows by defining ENABLE_PASSWORD_SAVE in config-win32.h).
+
+              If up is omitted, username/password will be prompted from the console.
+
+              The server configuration must specify an  --auth-user-pass-verify  script  to
+              verify the username/password provided by the client.
+
+You should edit the auth-mysql.conf and put it in the launch directory of openvpn
+(I know this is crappy and will be fixed in next version)
+If you put "none" for hostname, you should put a UNIX pipe path for mysql socket, and vice-versa.
+All other fields are mandatory, no commentary are accepted in this file, respect the syntax.
+
+This plugin was tested on OpenVpn-2.0.7@FreeBSD 5.4, but should work on other UNIX platforms as well.
+
+If you find a bug or have a suggestion, please send an email to wildcat at espix dot org.
+
+
+* last version at
+* http://www.espix.org
+

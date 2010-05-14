@@ -1,0 +1,3 @@
+* Add some logging
+* Take the config filename in argument
+* Use md5 password instead of cleartext one ?
