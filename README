@@ -43,6 +43,10 @@ You should edit the auth-mysql.conf and put it in the launch directory of openvp
 (I know this is crappy and will be fixed in next version)
 If you put "none" for hostname, you should put a UNIX pipe path for mysql socket, and vice-versa.
 All other fields are mandatory, no commentary are accepted in this file, respect the syntax.
+passwd_type field recognises the following value:
+* md5 for MD5('passwd')
+* sha1 for SHA1('passwd')
+It will default to plain. This will be used when matching the password provided by user.
 
 This plugin was tested on OpenVpn-2.0.7@FreeBSD 5.4, but should work on other UNIX platforms as well.
 
