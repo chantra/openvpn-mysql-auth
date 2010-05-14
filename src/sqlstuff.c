@@ -37,12 +37,16 @@
  */
 
 
-struct user * ret_user(struct s_conf *conf, const char *l)
+struct user * ret_user(struct s_conf *conf, const char *l, const char *p)
 {
 	MYSQL 		mysql;
 	MYSQL_RES 	*result;
 	MYSQL_ROW	row;
 	char  		*query;
+	char			*escaped_login = NULL;
+	char			*escaped_passwd = NULL;
+	unsigned long escaped_login_length, escaped_passwd_length;
+	char			*pass_query = NULL;
 
 	char		*login = (char *) l; /* no warning, be happy */
 	struct user	*u;
@@ -56,11 +60,44 @@ struct user * ret_user(struct s_conf *conf, const char *l)
 
 	/* forge query */
 
+	escaped_login = (char *) malloc	(sizeof(char) * (strlen (l) * 2 + 1));
+	escaped_passwd = (char *) malloc (sizeof(char) * (strlen (p) * 2 + 1));
+	escaped_login_length = mysql_real_escape_string (&mysql, escaped_login, l, strlen (l));
+	escaped_passwd_length = mysql_real_escape_string (&mysql, escaped_passwd, p, strlen (p));
+	
+	switch (conf->passwd_type)
+	{
+		case PASSWD_MD5:
+			pass_query = (char *) malloc (sizeof(char) * (escaped_passwd_length + 7 + 1)); /* MD5('') */
+			sprintf(pass_query, "MD5('%s')", escaped_passwd);
+			break;
+		case PASSWD_SHA1:
+			pass_query = (char *) malloc (sizeof(char) * (escaped_passwd_length + 8 + 1)); /* SHA1('') */
+			sprintf(pass_query, "SHA1('%s')", escaped_passwd);
+			break;
+		default:
+			pass_query = (char *) malloc (sizeof(char) * (escaped_passwd_length + 2 + 1)); /* '' */
+			sprintf(pass_query, "'%s'", escaped_passwd);
+	}
 	if (strlen(l) > 50) login[50] = 0; /* Limit of sql field (very bad tricks of *login, uuuugly, but i'm stone so don't blame me ;p */
 
-	query = (char*) malloc(sizeof(char) * strlen(SQL_GETUSER) + strlen(l) + 1);
-	sprintf(query, SQL_GETUSER, l);
+	query = (char*) malloc(sizeof(char) * 
+										( strlen(SQL_GETUSER) 
+											+ strlen (conf->id_field) + strlen (conf->login_field) + strlen (conf->passwd_field) 
+											+ strlen (conf->table)
+											+ strlen (conf->login_field) + escaped_login_length
+											+ strlen (conf->passwd_field) + strlen (pass_query)
+											+ 1));
+	sprintf(query, SQL_GETUSER,
+								conf->id_field, conf->login_field, conf->passwd_field,
+								conf->table,
+								conf->login_field, escaped_login,
+								conf->passwd_field, pass_query);
 
+	printf ("Query: %s\n", query);
+	free (escaped_login);
+	free (escaped_passwd);
+	free (pass_query);
 	if (mysql_query(&mysql, query))
 	{
 		free(query);

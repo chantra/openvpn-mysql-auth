@@ -1,0 +1,31 @@
+m4_define([openvpnauthmysql_version_major],[0])
+m4_define([openvpnauthmysql_version_minor],[0])
+m4_define([openvpnauthmysql_version_micro],[4])
+m4_define([openvpnauthmysql_version_extra],[])
+m4_define([openvpnauthmysql_version],[openvpnauthmysql_version_major().openvpnauthmysql_version_minor().openvpnauthmysql_version_micro()openvpnauthmysql_version_extra()])
+
+AC_INIT([OpenVPN MySQL Auth],[openvpnauthmysql_version()],[chantra@debuntu.org],[openvpn-auth-mysql])
+AM_INIT_AUTOMAKE([1.9 foreign no-dist-gzip dist-bzip2])
+
+AC_CONFIG_SRCDIR([Makefile.am])
+AM_CONFIG_HEADER([config.h])
+
+AM_INIT_AUTOMAKE([$PACKAGE], [$VERSION])
+
+AC_PROG_LIBTOOL
+dnl AC_PROG_RANLIB
+dnl LT_INIT
+AC_CONFIG_MACRO_DIR([m4])
+AC_PROG_CC
+
+CFLAGS="${CFLAGS} -g -Wall -Werror"
+
+AC_SUBST(CFLAGS)
+
+AC_CHECK_HEADER([mysql/mysql.h],
+        [AC_CHECK_LIB(mysqlclient, [mysql_init])],
+        [AC_MSG_ERROR("mysql client headers not found")])
+
+AC_PROG_INSTALL
+AC_OUTPUT( Makefile src/Makefile tests/Makefile)
+

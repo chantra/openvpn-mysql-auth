@@ -26,11 +26,14 @@
 #include <stdio.h>
 #include <string.h>
 #include <stdlib.h>
+#include <unistd.h>
 
-#include "openvpn-plugin.h"
+#include <openvpn/openvpn-plugin.h>
 #include "sqlstuff.h"
 #include "rconf.h"
 
+
+#define DEFAULT_CONFIG		"auth-mysql.conf"
 /*
  * Our context, where we keep our state.
  */
@@ -75,21 +78,48 @@ get_env (const char *name, const char *envp[])
   return NULL;
 }
 
+/*
+ *  * Return the length of a string array
+ *   */
+static int
+string_array_len (const char *array[])
+{
+  int i = 0;
+  if (array){
+    while (array[i])
+      ++i;
+  }
+  return i;
+}
+
 OPENVPN_EXPORT openvpn_plugin_handle_t
 openvpn_plugin_open_v1 (unsigned int *type_mask, const char *argv[], const char *envp[])
 {
+	const char *configfile = DEFAULT_CONFIG;
   struct plugin_context *context;
+	int rc = 0;
 
   /*
    * Allocate our context
    */
   context = (struct plugin_context *) calloc (1, sizeof (struct plugin_context));
 
+	/*
+	* get our command line argument
+	*/
+	while ( ( rc = getopt ( string_array_len (argv), (char **)argv, "c:" ) ) != - 1 ){
+		switch (rc){
+			case 'c':
+				configfile = optarg;
+				break;
+			default:
+				break;
+		}
+	}
   /*
    * configure our mysql client
    */
-  
-  context->conf = rconf("auth-mysql.conf");
+  context->conf = rconf(configfile);
   
   /*
    * We are only interested in intercepting the
@@ -110,19 +140,17 @@ openvpn_plugin_func_v1 (openvpn_plugin_handle_t handle, const int type, const ch
   const char *username = get_env ("username", envp);
   const char *password = get_env ("password", envp);
 
-  /* do mysql stuff here */
-  if ((u = ret_user(context->conf, username)) == NULL)
-  {
+	if( type == OPENVPN_PLUGIN_AUTH_USER_PASS_VERIFY )
+	{
+		/* do mysql stuff here */
+		if ((u = ret_user(context->conf, username, password)) == NULL)
+		{
+		return OPENVPN_PLUGIN_FUNC_ERROR;
+		}
+		free_u(u);
+		return OPENVPN_PLUGIN_FUNC_SUCCESS;
+	}
 	return OPENVPN_PLUGIN_FUNC_ERROR;
-  }
-  if (username && !strncmp(username, u->login, 51) && password && !strncmp(password, u->passw, 256))
-  {
-	
-	free_u(u);
-	return OPENVPN_PLUGIN_FUNC_SUCCESS;
-  }
-  free_u(u);
-  return OPENVPN_PLUGIN_FUNC_ERROR;
 }
 
 OPENVPN_EXPORT void

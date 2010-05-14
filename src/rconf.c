@@ -94,6 +94,35 @@ struct s_conf * rconf(const char *file)
                                 strncpy(conf->s_path, value, strlen(value)+1);
                         }   
                 }
+								else if (!strcmp (name, "table"))
+								{
+									conf->table = (char*) malloc(sizeof(char) * strlen(value) + 1);
+                  strncpy(conf->table, value, strlen(value)+1);
+								}else if (!strcmp (name, "id_field"))
+								{
+									conf->id_field = (char*) malloc(sizeof(char) * strlen(value) + 1);
+                  strncpy(conf->id_field, value, strlen(value)+1);
+								}else if (!strcmp (name, "login_field"))
+								{
+									conf->login_field = (char*) malloc(sizeof(char) * strlen(value) + 1);
+                  strncpy(conf->login_field, value, strlen(value)+1);
+								}else if (!strcmp (name, "passwd_field"))
+								{
+									conf->passwd_field = (char*) malloc(sizeof(char) * strlen(value) + 1);
+                  strncpy(conf->passwd_field, value, strlen(value)+1);
+								}else if (!strcmp (name, "passwd_type"))
+								{
+									if (!strcasecmp (value, "plain"))
+									{
+										conf->passwd_type = PASSWD_PLAIN;
+									}else if (!strcasecmp (value, "md5"))
+									{
+										conf->passwd_type = PASSWD_MD5;
+									}else if (!strcasecmp (value, "sha1")){
+										conf->passwd_type = PASSWD_SHA1;
+									}
+								}
+
 		else
 		{
 			; /* unknown token ... do nothing ... */
