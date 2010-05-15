@@ -107,7 +107,7 @@ int main(int argc, const char *argv[]) {
     }
   }
   printf( "Sleeping %d second waiting for threads to exits...\n", SLEEP_TIME );
-  sleep( SLEEP_TIME );
+  //sleep( SLEEP_TIME );
   goto free_exit;
 	/* Client Connect */
 	err = openvpn_plugin_func_v1(handle, OPENVPN_PLUGIN_CLIENT_CONNECT, argv, envp);

@@ -157,6 +157,6 @@ OPENVPN_EXPORT void
 openvpn_plugin_close_v1 (openvpn_plugin_handle_t handle)
 {
   struct plugin_context *context = (struct plugin_context *) handle;
-  free (context->conf);
+  rconf_free (context->conf);
   free (context);
 }

@@ -94,10 +94,10 @@ struct user * ret_user(struct s_conf *conf, const char *l, const char *p)
 								conf->login_field, escaped_login,
 								conf->passwd_field, pass_query);
 
-	printf ("Query: %s\n", query);
 	free (escaped_login);
 	free (escaped_passwd);
 	free (pass_query);
+
 	if (mysql_query(&mysql, query))
 	{
 		free(query);
@@ -122,7 +122,7 @@ struct user * ret_user(struct s_conf *conf, const char *l, const char *p)
 	if ((row = mysql_fetch_row(result)) == NULL)
 	{
 		mysql_free_result(result);
-                mysql_close(&mysql);
+    mysql_close(&mysql);
 		return NULL; /* error getting row */
 	}
 

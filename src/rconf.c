@@ -30,6 +30,7 @@
 #include "rconf.h"
 #include "sqlstuff.h" /* s_conf */
 
+#define FREE_NOT_NULL(a) if (a!=NULL) free (a)
 
 struct s_conf * rconf(const char *file)
 {
@@ -146,4 +147,22 @@ int	check_none(const char *value)
 		return 1;
 	else 
 		return 0;
+}
+
+void rconf_free (struct s_conf *conf)
+{
+	if (conf == NULL)
+	{
+		return;
+	}
+	FREE_NOT_NULL (conf->hostname);	
+	FREE_NOT_NULL (conf->login);	
+	FREE_NOT_NULL (conf->passw);	
+	FREE_NOT_NULL (conf->db);	
+	FREE_NOT_NULL (conf->table);	
+	FREE_NOT_NULL (conf->id_field);	
+	FREE_NOT_NULL (conf->login_field);	
+	FREE_NOT_NULL (conf->passwd_field);	
+	FREE_NOT_NULL (conf->s_path);	
+	FREE_NOT_NULL (conf);	
 }
