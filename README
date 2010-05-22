@@ -56,3 +56,11 @@ If you find a bug or have a suggestion, please send an email to wildcat at espix
 * last version at
 * http://www.espix.org
 
+
+Expanded symbol:
+----------------
+
+%username%    username or NULL if not available
+%password%    password or NULL if not available
+
+%now%         current time

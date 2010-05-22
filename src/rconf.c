@@ -50,11 +50,19 @@ struct s_conf * rconf(const char *file)
 	conf->db = NULL;
 	conf->s_path = NULL;
 	conf->port = 0;
+	conf->tls_verify_query = NULL;
+	conf->tls_final_query = NULL;
+	conf->client_connect_query = NULL;
+	conf->client_disconnect_query = NULL;
+	conf->learn_address_query = NULL;
+	conf->enable_pf_query = NULL;
+	conf->auth_user_pass_verify_query = NULL;
+
 
 	while(!feof(ffd))
 	{
 		if (feof(ffd)) break;
-		fscanf(ffd, "%s %s\n", name, value);
+		fscanf(ffd, "%s %[^\n]\n", name, value);
 		
 		if (!strcmp(name, "hostname")) /* can be null (if unix socket) */
 		{
@@ -67,63 +75,76 @@ struct s_conf * rconf(const char *file)
 			}
 		}
 		else if (!strcmp(name, "login"))
-                {
-                        conf->login = (char*) malloc(sizeof(char) * strlen(value) + 1);
-                        strncpy(conf->login, value, strlen(value)+1);
-                }
-                else if (!strcmp(name, "password"))
-                {
-                        conf->passw = (char*) malloc(sizeof(char) * strlen(value) + 1);
-                        strncpy(conf->passw, value, strlen(value)+1);
-                }
-                else if (!strcmp(name, "db"))
-                {
-                        conf->db = (char*) malloc(sizeof(char) * strlen(value) + 1);
-                        strncpy(conf->db, value, strlen(value)+1);
-                }
-                else if (!strcmp(name, "port"))
-                {
+		{
+			conf->login = (char*) malloc(sizeof(char) * strlen(value) + 1);
+			strncpy(conf->login, value, strlen(value)+1);
+		}
+		else if (!strcmp(name, "password"))
+		{
+			conf->passw = (char*) malloc(sizeof(char) * strlen(value) + 1);
+			strncpy(conf->passw, value, strlen(value)+1);
+		}
+		else if (!strcmp(name, "db"))
+		{
+			conf->db = (char*) malloc(sizeof(char) * strlen(value) + 1);
+			strncpy(conf->db, value, strlen(value)+1);
+		}
+		else if (!strcmp(name, "port"))
+		{
 			conf->port = atoi(value);
-                }
-                else if (!strcmp(name, "s_path")) /* can be null */
-                {
-                        if (check_none(value))
-                                conf->s_path = NULL;
-                        else
-                        {
-                                conf->s_path = (char*) malloc(sizeof(char) * strlen(value) + 1);
-                                strncpy(conf->s_path, value, strlen(value)+1);
-                        }   
-                }
-								else if (!strcmp (name, "table"))
-								{
-									conf->table = (char*) malloc(sizeof(char) * strlen(value) + 1);
-                  strncpy(conf->table, value, strlen(value)+1);
-								}else if (!strcmp (name, "id_field"))
-								{
-									conf->id_field = (char*) malloc(sizeof(char) * strlen(value) + 1);
-                  strncpy(conf->id_field, value, strlen(value)+1);
-								}else if (!strcmp (name, "login_field"))
-								{
-									conf->login_field = (char*) malloc(sizeof(char) * strlen(value) + 1);
-                  strncpy(conf->login_field, value, strlen(value)+1);
-								}else if (!strcmp (name, "passwd_field"))
-								{
-									conf->passwd_field = (char*) malloc(sizeof(char) * strlen(value) + 1);
-                  strncpy(conf->passwd_field, value, strlen(value)+1);
-								}else if (!strcmp (name, "passwd_type"))
-								{
-									if (!strcasecmp (value, "plain"))
-									{
-										conf->passwd_type = PASSWD_PLAIN;
-									}else if (!strcasecmp (value, "md5"))
-									{
-										conf->passwd_type = PASSWD_MD5;
-									}else if (!strcasecmp (value, "sha1")){
-										conf->passwd_type = PASSWD_SHA1;
-									}
-								}
-
+		}
+		else if (!strcmp(name, "s_path")) /* can be null */
+		{
+			if (check_none(value))
+				conf->s_path = NULL;
+			else
+			{
+				conf->s_path = (char*) malloc(sizeof(char) * strlen(value) + 1);
+				strncpy(conf->s_path, value, strlen(value)+1);
+			}   
+		}
+		else if (!strcmp (name, "table"))
+		{
+			conf->table = (char*) malloc(sizeof(char) * strlen(value) + 1);
+			strncpy(conf->table, value, strlen(value)+1);
+		}else if (!strcmp (name, "id_field"))
+		{
+			conf->id_field = (char*) malloc(sizeof(char) * strlen(value) + 1);
+			strncpy(conf->id_field, value, strlen(value)+1);
+		}else if (!strcmp (name, "login_field"))
+		{
+			conf->login_field = (char*) malloc(sizeof(char) * strlen(value) + 1);
+			strncpy(conf->login_field, value, strlen(value)+1);
+		}else if (!strcmp (name, "passwd_field"))
+		{
+			conf->passwd_field = (char*) malloc(sizeof(char) * strlen(value) + 1);
+			strncpy(conf->passwd_field, value, strlen(value)+1);
+		}else if (!strcmp (name, "passwd_type"))
+		{
+			if (!strcasecmp (value, "plain"))
+			{
+				conf->passwd_type = PASSWD_PLAIN;
+			}else if (!strcasecmp (value, "md5"))
+			{
+				conf->passwd_type = PASSWD_MD5;
+			}else if (!strcasecmp (value, "sha1")){
+				conf->passwd_type = PASSWD_SHA1;
+			}
+		}else if (!strcmp (name, "tls_verify_query")){
+			conf->tls_verify_query = strdup (value);
+		}else if (!strcmp (name, "tls_final_query")){
+			conf->tls_final_query = strdup (value);
+		}else if (!strcmp (name, "client_connect_query")){
+			conf->client_connect_query = strdup (value);
+		}else if (!strcmp (name, "client_disconnect_query")){
+			conf->client_disconnect_query = strdup (value);
+		}else if (!strcmp (name, "learn_address_query")){
+			conf->learn_address_query = strdup (value);
+		}else if (!strcmp (name, "enable_pf_query")){
+			conf->enable_pf_query = strdup (value);
+		}else if (!strcmp (name, "auth_user_pass_verify_query")){
+			conf->auth_user_pass_verify_query = strdup (value);
+		}
 		else
 		{
 			; /* unknown token ... do nothing ... */
@@ -164,5 +185,12 @@ void rconf_free (struct s_conf *conf)
 	FREE_NOT_NULL (conf->login_field);	
 	FREE_NOT_NULL (conf->passwd_field);	
 	FREE_NOT_NULL (conf->s_path);	
+	FREE_NOT_NULL (conf->tls_verify_query);
+	FREE_NOT_NULL (conf->tls_final_query);
+	FREE_NOT_NULL (conf->client_connect_query);
+	FREE_NOT_NULL (conf->client_disconnect_query);
+	FREE_NOT_NULL (conf->learn_address_query);
+	FREE_NOT_NULL (conf->enable_pf_query);
+	FREE_NOT_NULL (conf->auth_user_pass_verify_query);
 	FREE_NOT_NULL (conf);	
 }

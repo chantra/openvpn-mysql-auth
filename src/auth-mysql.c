@@ -1,15 +1,25 @@
 /**
+ * vim: tabstop=2:shiftwidth=2:softtabstop=2:expandtab
+ *  OpenVPN -- An application to securely tunnel IP networks
+ *             over a single TCP/UDP port, with support for SSL/TLS-based
+ *             session authentication and key exchange,
+ *             packet encryption, packet authentication, and
+ *             packet compression.
+ *
+ * auth-mysql.c
+ * OpenVPN MySQL authentication plugin
  *
  *  Copyright 2006-2010 Gouverneur Thomas
+ *  Copyright (C) 2010 Emmanuel Bretelle <chantra@debuntu.org>
  *
  *  This file is part of auth-mysql plugin for OpenVPN.
  *
- *  Foobar is free software: you can redistribute it and/or modify
+ *  This program is free software: you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
  *  the Free Software Foundation, either version 3 of the License, or
  *  (at your option) any later version.
  *
- *  Foobar is distributed in the hope that it will be useful,
+ *  This program is distributed in the hope that it will be useful,
  *  but WITHOUT ANY WARRANTY; without even the implied warranty of
  *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  *  GNU General Public License for more details.
@@ -31,7 +41,7 @@
 #include <openvpn/openvpn-plugin.h>
 #include "sqlstuff.h"
 #include "rconf.h"
-
+#include "utils.h"
 
 #define DEFAULT_CONFIG		"auth-mysql.conf"
 /*
@@ -52,45 +62,6 @@ void free_u(struct user *u)
 	return;
 }
 
-
-/*
- * Given an environmental variable name, search
- * the envp array for its value, returning it
- * if found or NULL otherwise.
- */
-static const char *
-get_env (const char *name, const char *envp[])
-{
-  if (envp)
-    {
-      int i;
-      const int namelen = strlen (name);
-      for (i = 0; envp[i]; ++i)
-	{
-	  if (!strncmp (envp[i], name, namelen))
-	    {
-	      const char *cp = envp[i] + namelen;
-	      if (*cp == '=')
-		return cp + 1;
-	    }
-	}
-    }
-  return NULL;
-}
-
-/*
- *  * Return the length of a string array
- *   */
-static int
-string_array_len (const char *array[])
-{
-  int i = 0;
-  if (array){
-    while (array[i])
-      ++i;
-  }
-  return i;
-}
 
 OPENVPN_EXPORT openvpn_plugin_handle_t
 openvpn_plugin_open_v1 (unsigned int *type_mask, const char *argv[], const char *envp[])
@@ -125,7 +96,13 @@ openvpn_plugin_open_v1 (unsigned int *type_mask, const char *argv[], const char 
    * We are only interested in intercepting the
    * --auth-user-pass-verify callback.
    */
-  *type_mask = OPENVPN_PLUGIN_MASK (OPENVPN_PLUGIN_AUTH_USER_PASS_VERIFY);
+  *type_mask = OPENVPN_PLUGIN_MASK ( OPENVPN_PLUGIN_AUTH_USER_PASS_VERIFY )
+							| OPENVPN_PLUGIN_MASK ( OPENVPN_PLUGIN_CLIENT_CONNECT )
+              | OPENVPN_PLUGIN_MASK ( OPENVPN_PLUGIN_CLIENT_DISCONNECT )
+              | OPENVPN_PLUGIN_MASK ( OPENVPN_PLUGIN_LEARN_ADDRESS )
+							| OPENVPN_PLUGIN_MASK ( OPENVPN_PLUGIN_TLS_VERIFY )
+							| OPENVPN_PLUGIN_MASK ( OPENVPN_PLUGIN_ENABLE_PF )
+							| OPENVPN_PLUGIN_MASK ( OPENVPN_PLUGIN_TLS_FINAL );
 
   return (openvpn_plugin_handle_t) context;
 }
@@ -136,12 +113,55 @@ openvpn_plugin_func_v1 (openvpn_plugin_handle_t handle, const int type, const ch
   struct plugin_context *context = (struct plugin_context *) handle;
   struct user *u;
 
-  /* get username/password from envp string array */
-  const char *username = get_env ("username", envp);
-  const char *password = get_env ("password", envp);
-
-	if( type == OPENVPN_PLUGIN_AUTH_USER_PASS_VERIFY )
+  if (type == OPENVPN_PLUGIN_CLIENT_CONNECT){
+    fprintf (stderr, "OPENVPN_PLUGIN_CLIENT_CONNECT received:\n");
+    dump_env (envp);
+    dump_env (argv);
+    return OPENVPN_PLUGIN_FUNC_SUCCESS;
+  }
+  if (type == OPENVPN_PLUGIN_ENABLE_PF){
+    /* TODO Enable firewall */
+    fprintf (stderr, "OPENVPN_PLUGIN_ENABLE_PF received:\n");
+    /*
+    dump_env (envp);
+    dump_env (argv);
+    */
+    return OPENVPN_PLUGIN_FUNC_ERROR;
+  }
+  if (type == OPENVPN_PLUGIN_CLIENT_DISCONNECT){
+    fprintf (stderr, "OPENVPN_PLUGIN_CLIENT_DISCONNECT received:\n");
+    dump_env (envp);
+    dump_env (argv);
+    return OPENVPN_PLUGIN_FUNC_SUCCESS;
+  }
+  if (type == OPENVPN_PLUGIN_LEARN_ADDRESS){
+    fprintf (stderr, "OPENVPN_PLUGIN_LEARN_ADDRESS received:\n");
+    dump_env (envp);
+    dump_env (argv);
+    return OPENVPN_PLUGIN_FUNC_SUCCESS;
+  }
+	if (type == OPENVPN_PLUGIN_TLS_VERIFY){
+    fprintf (stderr, "OPENVPN_PLUGIN_TLS_VERIFY received:\n");
+    /*
+    dump_env (envp);
+    dump_env (argv);
+    */
+    return OPENVPN_PLUGIN_FUNC_SUCCESS;
+  }
+	if (type == OPENVPN_PLUGIN_TLS_FINAL){
+    //check if user or group is (still) allowed to connect
+    fprintf (stderr, "OPENVPN_PLUGIN_TLS_FINAL received:\n");
+    dump_env (envp);
+    dump_env (argv);
+    return OPENVPN_PLUGIN_FUNC_SUCCESS;
+  }
+  if( type == OPENVPN_PLUGIN_AUTH_USER_PASS_VERIFY )
 	{
+    fprintf (stderr, "OPENVPN_PLUGIN_AUTH_USER_PASS_VERIFY received:\n");
+		/* get username/password from envp string array */
+		const char *username = get_env ("username", envp);
+		const char *password = get_env ("password", envp);
+    am_mysql_simple_query (context->conf, context->conf->auth_user_pass_verify_query, envp, argv); 
 		/* do mysql stuff here */
 		if ((u = ret_user(context->conf, username, password)) == NULL)
 		{

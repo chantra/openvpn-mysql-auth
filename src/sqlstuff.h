@@ -25,6 +25,8 @@
 
 #ifndef SQLSTUFF_H
 
+#include "list.h"
+
 #ifndef NULL
 #define NULL 0
 #endif
@@ -62,9 +64,31 @@ struct s_conf
   enum passwd_type  passwd_type;
 	char *s_path;
 	int  port;
+  /* QUERIES */
+  char *tls_verify_query;
+  char *tls_final_query;
+  char *auth_user_pass_verify_query;
+  char *client_connect_query;
+  char *client_disconnect_query;
+  char *learn_address_query;
+  char *enable_pf_query;
 };
 
+
+/**
+ * Execute a simple query
+ * return the number of row returned or -1 on error
+ */
+extern int am_mysql_simple_query (struct s_conf *conf, char *raw_query, const char *envp[], const char *argv[]);
 struct user * ret_user(struct s_conf *, const char *, const char *);
+
+/*
+ * Return a list containing our special expandable variable
+ * like %username%, %password%, %now% ...
+ */
+extern am_list_t *create_expandable_variable_list (const char *envp[], const char *argv[]);
+/* Free a list created by create_expandable_variable_list */
+extern void free_expandable_variable_list (am_list_t *expandable_variable_list);
 
 #define SQLSTUFF_H
 #endif

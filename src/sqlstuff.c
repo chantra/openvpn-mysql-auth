@@ -27,15 +27,98 @@
 #include <string.h>
 #include <stdlib.h>
 #include <stdio.h>
+#include <time.h>
 
+#include "utils.h"
+#include "list.h"
 #include "sqlstuff.h" /* user, s_conf */
+#include "kvp.h"
 
 
+#define NULL_OR_DUP(k) k==NULL ? NULL : strdup (k)
+#define EV_DUP(k) strdupf("%%%s%%", k)
 /* 
  * TODO: 
  *        * log mysql error to syslog
  */
 
+char *
+expand_query (char *query, am_list_t *expandable_var){
+	char *tmp = NULL;
+	char *res = NULL;
+	char *key, *value;
+	am_list_item_t *node;
+	res = strdup (query);	
+
+	for (node = expandable_var->first; node; node = node->next){
+		if (node->data == NULL
+				|| ((kvp_t *)node->data)->key == NULL
+				|| ((kvp_t *)node->data)->value == NULL)
+			continue;
+		key = ((kvp_t *)node->data)->key;
+		value = ((kvp_t *)node->data)->value;
+
+		tmp = res;
+		if (strstr (tmp, key) == NULL)
+			continue;
+		res = str_replace (tmp, key, value);
+		am_free (tmp);
+	}
+	return res;
+}
+
+void
+expandable_variable_list_free_func (void *data){
+	kvp_t *k = data;
+	kvp_free (k);
+}
+
+am_list_t *
+create_expandable_variable_list (const char *envp[], const char *argv[]){
+	time_t t;
+	am_list_t *l = am_list_new ();
+	if (l == NULL)
+		return l;
+
+	t = time (NULL);
+
+	
+	am_list_append (l, kvp_new_with_kv (EV_DUP ("now"), strdupf ("%d", t)));	
+	am_list_append (l, kvp_new_with_kv (EV_DUP ("username"), NULL_OR_DUP (get_env ("username", envp))));	
+	am_list_append (l, kvp_new_with_kv (EV_DUP ("password"), NULL_OR_DUP (get_env ("password", envp))));	
+	am_list_append (l, kvp_new_with_kv (EV_DUP ("trusted_port"), NULL_OR_DUP (get_env ("trusted_port", envp))));	
+	am_list_append (l, kvp_new_with_kv (EV_DUP ("trusted_ip"), NULL_OR_DUP (get_env ("trusted_ip", envp))));	
+	am_list_append (l, kvp_new_with_kv (EV_DUP ("time_unix"), NULL_OR_DUP (get_env ("time_unix", envp))));	
+	am_list_append (l, kvp_new_with_kv (EV_DUP ("ifconfig_pool_remote_ip"), NULL_OR_DUP (get_env ("ifconfig_pool_remote_ip", envp))));	
+	am_list_append (l, kvp_new_with_kv (EV_DUP ("ifconfig_pool_netmask"), NULL_OR_DUP (get_env ("ifconfig_pool_netmask", envp))));	
+	am_list_append (l, kvp_new_with_kv (EV_DUP ("time_duration"), NULL_OR_DUP (get_env ("time_duration", envp))));	
+	am_list_append (l, kvp_new_with_kv (EV_DUP ("bytes_sent"), NULL_OR_DUP (get_env ("bytes_sent", envp))));	
+	am_list_append (l, kvp_new_with_kv (EV_DUP ("bytes_received"), NULL_OR_DUP (get_env ("bytes_received", envp))));	
+
+  return l;
+}
+
+void
+free_expandable_variable_list (am_list_t *expandable_variable_list){
+	am_list_free (expandable_variable_list, expandable_variable_list_free_func);
+}
+
+int
+am_mysql_simple_query (struct s_conf *conf, char *raw_query, const char *envp[], const char *argv[]){
+	MYSQL 		mysql;
+
+	mysql_init(&mysql);
+	mysql_options(&mysql, MYSQL_READ_DEFAULT_GROUP, "OpenVPN auth-mysql");
+
+	if (!mysql_real_connect(&mysql, conf->hostname, conf->login, conf->passw, conf->db, conf->port, conf->s_path, 0))
+		return -1; /* unable to establish connection */
+	am_list_t *l = create_expandable_variable_list (envp, argv);	
+	char *q = expand_query (raw_query, l);
+	fprintf (stderr, "Expanded Query: %s\n", q);
+	am_free (q);
+	free_expandable_variable_list (l);
+	return 0;
+} 
 
 struct user * ret_user(struct s_conf *conf, const char *l, const char *p)
 {
