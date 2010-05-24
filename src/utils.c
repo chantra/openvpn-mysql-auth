@@ -64,17 +64,25 @@ char *
 str_replace ( const char *string, const char *substr, const char *replacement ){
   char *tok = NULL;
   char *newstr = NULL;
+  char *oldstr = NULL;
 
   /* if either substr or replacement is NULL, duplicate string a let caller handle it */
   if ( substr == NULL || replacement == NULL ) return strdup (string);
-  tok = strstr ( string, substr );
-  if ( tok == NULL ) return strdup (string);
-  newstr = malloc ( strlen ( string ) - strlen ( substr ) + strlen ( replacement ) + 1 );
-  if ( newstr == NULL ) return NULL;
-  memcpy ( newstr, string, tok - string );
-  memcpy ( newstr + (tok - string), replacement, strlen ( replacement ) );
-  memcpy ( newstr + (tok - string) + strlen( replacement ), tok + strlen ( substr ), strlen ( string ) - strlen ( substr ) - ( tok - string ) );
-  memset ( newstr + strlen ( string ) - strlen ( substr ) + strlen ( replacement ) , 0, 1 );
+  newstr = strdup (string);
+  while ( (tok = strstr ( newstr, substr ))){
+    oldstr = newstr;
+    newstr = am_malloc ( strlen ( oldstr ) - strlen ( substr ) + strlen ( replacement ) + 1 );
+    /*failed to alloc mem, free old string and return NULL */
+    if ( newstr == NULL ){
+      am_free (oldstr);
+      return NULL;
+    }
+    memcpy ( newstr, oldstr, tok - oldstr );
+    memcpy ( newstr + (tok - oldstr), replacement, strlen ( replacement ) );
+    memcpy ( newstr + (tok - oldstr) + strlen( replacement ), tok + strlen ( substr ), strlen ( oldstr ) - strlen ( substr ) - ( tok - oldstr ) );
+    memset ( newstr + strlen ( oldstr ) - strlen ( substr ) + strlen ( replacement ) , 0, 1 );
+    am_free (oldstr);
+  }
   return newstr;
 }
 
