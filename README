@@ -1,66 +1,112 @@
-OpenVPN auth-mysql plugin.
+Dependencies:
+------------
 
-auth-mysql.c -- main plugin file
-sqlstuff.c/h -- all the MySQL part (?! TODO: Porting to pgsql ?!)
-rconf.c/h    -- config file parser
+libmysql-client-dev
+libtool
 
-To build:
-	cp -R auth-mysql-x.y /path/to/openvpn-2.0.z/plugin/auth-mysql
-	(cd /path/to/openvpn-2.0.z/plugin/auth-mysql/ ; make)
-	cp /path/to/openvpn-2.0.z/plugin/auth-mysql/openvpn-auth-mysql.so /path/to/openvpn/libs/
+Installation:
+-------------
+./autogen.sh
+./configure
+make
+make install
 
-To use in OpenVPN:
+Optionally, if you only ran make, you can copy the .so files
+from src/.libs/ like:
+$ sudo mkdir /etc/openvpn/mysql-auth
+$ sudo cp -a src/.libs/libopenvpn-mysql-auth.so* /etc/openvpn/mysql-auth/
 
-if you want to use this authentication AND the ssl one,
-just add this line in your conf:
+Then add the following line to your openvpn config file:
+plugin /etc/openvpn/mysql-auth/libopenvpn-mysql-auth.so -c /etc/openvpn/mysql-auth/mysql-auth.conf
 
-	plugin /usr/local/lib/openvpn-auth-mysql.so
-
-if you want only mysql authentication (a bit more insecure),
-place theses lines in your server config file:
-
-	client-cert-not-required
-	username-as-common-name
-	plugin /usr/local/lib/openvpn-auth-mysql.so
-	dh dh1024.pem
-	ca ca.crt 	# should keep these two files
-
-and only specify the ca in your client's config file,
-and the login password like the openvpn's manpage describe:
-
-       --auth-user-pass [up]
-              Authenticate  with  server  using username/password.  up is a file containing
-              username/password on 2 lines (Note: OpenVPN will only read passwords  from  a
-              file  if  it has been built with the --enable-password-save configure option,
-              or on Windows by defining ENABLE_PASSWORD_SAVE in config-win32.h).
-
-              If up is omitted, username/password will be prompted from the console.
-
-              The server configuration must specify an  --auth-user-pass-verify  script  to
-              verify the username/password provided by the client.
-
-You should edit the auth-mysql.conf and put it in the launch directory of openvpn
-(I know this is crappy and will be fixed in next version)
-If you put "none" for hostname, you should put a UNIX pipe path for mysql socket, and vice-versa.
-All other fields are mandatory, no commentary are accepted in this file, respect the syntax.
-passwd_type field recognises the following value:
-* md5 for MD5('passwd')
-* sha1 for SHA1('passwd')
-It will default to plain. This will be used when matching the password provided by user.
-
-This plugin was tested on OpenVpn-2.0.7@FreeBSD 5.4, but should work on other UNIX platforms as well.
-
-If you find a bug or have a suggestion, please send an email to wildcat at espix dot org.
+Options:
+--------
+1) openvpn config file
+You can pass options to libopenvpn-mysql-auth.so:
+-c /path/to/config    default: mysql-auth.conf within openvpn directory (will depend on --cd argument passed to openvpn)
+-d                    enable debugging info, default: no
 
 
-* last version at
-* http://www.espix.org
+2) mysql-auth.conf
+The configuration must follow this rule:
+option value
+
+Available Options:
+++++++++++++++++++
+DB connection infos:
+Required:
+---------
+hostname    hostname to connect to (or "none" if using unix socket)
+port        port to connect to, default 0 (will connect to MySQL standard port)
+login       username used to establish connection to DB
+password    password used to establish connection to DB
+db          database to conenct to
+s_path      path to unix socket (or "none" if using TCP connection)
+
+either hostname or s_path can be omitted, but at least one of them need to be set.
 
 
-Expanded symbol:
-----------------
+Once this is done, you will need to set the following option to authenticate users, check access permissions,
+set up firewall rule, log connections....
 
-%username%    username or NULL if not available
-%password%    password or NULL if not available
+There are all optional, and will enable different features if there are set or not.
+In order to make this plugin as flexible as possible so it can adapt to any existing databases,
+*expandable variable* are available, see below
 
-%now%         current time
+Authentication:
+User/Password authentication is done if at least *auth_user_pass_verify_query* is set up.
+It goes through 3 steps:
+  - check user/password
+  - check user is allowed to access (if auth_user_pass_verify_user_access_query exists)
+  - if not yet allowed, check if groups the user belong to is allowed to access
+        (auth_user_pass_verify_group_access_query)
+* auth_user_pass_verify_query     
+                                Query to check if user/password matches. To succeed, 1 and only
+                                1 row must be returned. The value of 1st field in row will be used
+                                as {{user_id}} expandable variable
+    ex: SELECT id FROM users WHERE username={{escaped_username}} AND password=SHA1('{{escaped_password}}')
+
+* auth_user_pass_verify_user_access_query
+                                After a user is authenticated, this query will check if the user is 
+                                allowed to access the service.
+                                If omitted, no user_access check will be performed.
+                                Access will be granted if at least 1 row is returned
+    ex: SELECT access_id FROM user_access WHERE user_access.user_id = {{user_id}}
+
+* auth_user_pass_verify_group_access_query
+                                Same as above, but for groups. Will only be called:
+                                if defined and user access did not succeed
+                                OR
+                                if defined and user_access_query was not defined
+
+
+Expandable Variables:
++++++++++++++++++++++
+Expandable variable should be surrounded by double curly brackets "{{var}}" in the queries, the following
+are *potentially* available depending on the callback being called:
+
+time_now            actual unix timestamp (always available)
+username            username sent by client, start to be available when OPENVPN_PLUGIN_AUTH_USER_PASS_VERIFY
+                    callback is triggered
+password            only available in OPENVPN_PLUGIN_AUTH_USER_PASS_VERIFY
+escaped_username
+escaped_password    same as above, but SQL safe
+trusted_ip          IP the client is connecting with (available with OPENVPN_PLUGIN_CLIENT_CONNECT)
+trusted_port        Port the client is conencting from (available with OPENVPN_PLUGIN_CLIENT_CONNECT)
+time_unix           Timestamo at which client successfully connected (available with OPENVPN_PLUGIN_CLIENT_CONNECT)
+ifconfig_pool_remote_ip
+                    VPN IP given to client (available with OPENVPN_PLUGIN_CLIENT_CONNECT)
+time_duration       Time the connection lasted (available with OPENVPN_PLUGIN_CLIENT_DISCONNECT)
+bytes_sent          Total number of bytes sent to client during VPN session (available with OPENVPN_PLUGIN_CLIENT_DISCONNECT)
+bytes_received      Total number of bytes received from client during VPN session (available with OPENVPN_PLUGIN_CLIENT_DISCONNECT)
+
+More detailed info from:
+man openvpn
+in section "Environmental Variables"
+
+
+Callback calls:
++++++++++++++++
+
+To check in what order the callback will be called, see 
+http://svn.openvpn.net/projects/openvpn/branches/BETA21/openvpn/openvpn-plugin.h

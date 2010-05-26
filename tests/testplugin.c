@@ -2,7 +2,7 @@
  * vim: tabstop=2:shiftwidth=2:softtabstop=2:expandtab
  *
  * testplugin.c
- * OpenVPN LDAP Authentication Plugin Test Driver
+ * OpenVPN MySQL Authentication Plugin Test Driver
  *
  * Copyright (c) 2005 Landon Fuller <landonf@threerings.net>
  * All rights reserved.
@@ -38,7 +38,7 @@
 #include <unistd.h>
 #include <string.h>
 
-#include <openvpn/openvpn-plugin.h>
+#include "openvpn-plugin.h"
 #include <sys/types.h>
 #include <unistd.h>
 
@@ -50,6 +50,7 @@ const char password_template[] = "password=";
 
 int main(int argc, const char *argv[]) {
 	openvpn_plugin_handle_t handle;
+  void *client_context;
 	unsigned int type;
 	const char *envp[6]; /* username, password, verb, ifconfig_pool_remote_ip, NULL */
 	char username[30];
@@ -90,14 +91,15 @@ int main(int argc, const char *argv[]) {
   envp[4] = "auth_control_file=foobar_ctrl_file.txt";
 	envp[5] = NULL;
 
-	handle = openvpn_plugin_open_v1(&type, argv, envp);
+	handle = openvpn_plugin_open_v2 (&type, argv, envp, NULL);
 
 	if (!handle)
 		errx(1, "Initialization Failed!\n");
 
 	/* Authenticate */
   for( ; loops; --loops ){
-    err = openvpn_plugin_func_v1(handle, OPENVPN_PLUGIN_AUTH_USER_PASS_VERIFY, argv, envp);
+    client_context = openvpn_plugin_client_constructor_v1 (handle);
+    err = openvpn_plugin_func_v2(handle, OPENVPN_PLUGIN_AUTH_USER_PASS_VERIFY, argv, envp, client_context, NULL);
     if (err == OPENVPN_PLUGIN_FUNC_ERROR) {
       printf("Authorization Failed!\n");
     } else if( err == OPENVPN_PLUGIN_FUNC_SUCCESS ) {
@@ -105,6 +107,7 @@ int main(int argc, const char *argv[]) {
     }else if ( err == OPENVPN_PLUGIN_FUNC_DEFERRED ){
       printf("Authorization Deferred!\n");
     }
+    openvpn_plugin_client_destructor_v1 (handle, client_context);
   }
   printf( "Sleeping %d second waiting for threads to exits...\n", SLEEP_TIME );
   //sleep( SLEEP_TIME );

@@ -1,14 +1,15 @@
-lib_LTLIBRARIES = libopenvpn-auth-mysql.la
+lib_LTLIBRARIES = libopenvpn-mysql-auth.la
 
-auth_mysql_SOURCES = rconf.c  rconf.h \
+mysql_auth_SOURCES = plugin_conf.c plugin_conf.h \
 							utils.c utils.h \
+							client_context.c client_context.h \
 							list.c list.h \
 							kvp.c kvp.h \
 							debug.c debug.h \
-							sqlstuff.c  sqlstuff.h
+							am_mysql.c am_mysql.h
 
-libopenvpn_auth_mysql_la_SOURCES = auth-mysql.c \
-				$(auth_mysql_SOURCES)
+libopenvpn_mysql_auth_la_SOURCES = mysql-auth.c \
+				$(mysql_auth_SOURCES)
 
 
 

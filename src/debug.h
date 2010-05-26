@@ -25,7 +25,7 @@
 
 
 
-#define DEBUG_SQL 0
+#define DEBUG_SQL 1
 #define DEBUG_USER 0
 #define DEBUG_MAIN 1
 
@@ -47,6 +47,10 @@ void _log( const char *level, const char *fmt, ... );
 #define LOGWARNING( fmt, args... ) _log( "WARNING", fmt, ##args )
 
 #define LOGINFO( fmt, args... ) _log( "INFO", fmt, ##args )
+
+#define LOGDEBUG( fmt, args... ) _log( "DEBUG", fmt, ##args )
+
+#define DEBUG_PLUGIN( ctx, fmt, args... ) if(ctx->debug) LOGDEBUG( fmt, ##args )
 
 #endif /* _DEBUG_H_ */
 

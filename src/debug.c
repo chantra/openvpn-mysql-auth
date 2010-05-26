@@ -66,7 +66,7 @@ void _error( const char *file, int line, const char *func, const char *fmt, ... 
 
 void _log( const char *level, const char *fmt, ... ){
   va_list argp;
-  fprintf( stderr, "LDAP-AUTH: [%s] ", level);
+  fprintf( stderr, "MYSQL-AUTH: [%s] ", level);
   va_start( argp, fmt );
   vfprintf( stderr, fmt, argp );
   va_end( argp );

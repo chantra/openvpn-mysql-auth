@@ -1,6 +1,7 @@
 /**
  * vim: tabstop=2:shiftwidth=2:softtabstop=2:expandtab
- * kvp.c
+ * client_context.h
+ *
  * Copyright (C) 2010 Emmanuel Bretelle <chantra@debuntu.org>
  *
  * This program is free software; you can redistribute it and/or
@@ -19,34 +20,23 @@
  *
  */
 
-#include "kvp.h"
-#include "utils.h"
+#ifndef _CLIENT_CONTEXT_H_
+#define _CLIENT_CONTEXT_H_
 
-kvp_t *
-kvp_new (void){
-	kvp_t *k;
-	k = am_malloc (sizeof (kvp_t));
-	k->key = NULL;
-	k->value = NULL;
-	return k;
-}
+struct client_context {
+  char  *user_id;
+};
 
-kvp_t *
-kvp_new_with_kv (char *key, char *value){
-  kvp_t *k = kvp_new ();
-  if (k == NULL)
-    return k;
-  k->key = key;
-  k->value = value;
-  return k;
-}
 
-void
-kvp_free (kvp_t *k){
-	if (k == NULL) return;
-	if (k->key != NULL) am_free (k->key);
-	if (k->value != NULL) am_free (k->value);
-	am_free (k);
-}
+/**
+ * Initialize a new client context structure
+ */
+extern struct client_context    *client_context_new (void);
+/**
+ * Free a client context structure
+ */
+extern void                     client_context_free (struct client_context * cc);
 
+
+#endif
 

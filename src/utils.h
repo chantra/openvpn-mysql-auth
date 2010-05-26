@@ -24,6 +24,8 @@
 #define _UTILS_H_
 #include <stdlib.h>
 
+#define FREE_IF_NOT_NULL(a) if (a != NULL) am_free (a)
+
 /* memory allocation */
 extern void *am_malloc ( size_t size );
 extern void am_free ( void *ptr );

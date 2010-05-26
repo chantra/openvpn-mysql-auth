@@ -5,6 +5,6 @@ bin_PROGRAMS = testplugin
 
 testplugin_SOURCES = testplugin.c
 
-ldadd = $(top_srcdir)/src/.libs/libopenvpn-auth-mysql.a
+ldadd = $(top_srcdir)/src/.libs/libopenvpn-mysql-auth.a
 
 testplugin_LDADD = $(ldadd)

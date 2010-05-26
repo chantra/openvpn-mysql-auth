@@ -1,0 +1,7 @@
+Thanks:
+------
+
+Wildcat (wildcat ât espix dôt org) for providing http://wildcat.espix.org/dev/auth-mysql/ in the first place.
+This code got originally based on Wildcat's source. Since then, the source was (almost) totally modified to
+actually differ from the way the original source worked.
+As such, it is now a "fork" and release as a separate package.
