@@ -667,11 +667,6 @@ handle_auth_user_pass_verify_allowed:
     _am_mysql_handle_default_pf_rules (&mysql, conf, l, pf_rules);
     /* And now, for the rules themselves */
     _am_mysql_handle_pf_rules (&mysql, conf, l, pf_rules);
-    if (pf_rules->pf_rules_clients)
-      fprintf(stderr, "client rules: %s\n", pf_rules->pf_rules_clients);
-
-    if (pf_rules->pf_rules_subnets)
-      fprintf(stderr, "subnets rules: %s\n", pf_rules->pf_rules_subnets);
     /* write the rules to pf file */
     pf_rules_to_file (pf_rules, pf_file);
   } 

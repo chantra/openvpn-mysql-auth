@@ -47,23 +47,29 @@ pf_rules_free (struct pf_rules *pf_rules){
 
 int
 pf_rules_to_file (struct pf_rules *pf_rules, const char *pf_file){
-  int fd = open (pf_file, O_WRONLY);
+	char *s;
+  int fd = open (pf_file, O_WRONLY | O_CREAT, S_IRWXU);
   if (fd == -1){
     LOGERROR ("Could not open file %s in write mode Error (%d) %s\n", pf_file, errno, strerror (errno)); 
     return -1;
   }
-  
-  /* TODO write rules to file
- * [CLIENTS DROP|ACCEPT]
- * {+|-}common_name1
- * {+|-}common_name2
- * . . .
- * [SUBNETS DROP|ACCEPT]
- * {+|-}subnet1
- * {+|-}subnet2
- * . . .
- * [END]
- */
+	/* TODO handle exception */
+	s = strdupf ("[CLIENTS %s]\n", pf_rules->default_pf_rules_clients == DEFAULT_PF_RULES_ACCEPT ? "ACCEPT" : "DROP");
+	write (fd, s, strlen(s));
+	am_free (s);
+	if (pf_rules->pf_rules_clients != NULL)
+		write (fd, pf_rules->pf_rules_clients, strlen (pf_rules->pf_rules_clients));
+
+	s = strdupf ("\n[SUBNETS %s]\n", pf_rules->default_pf_rules_subnets == DEFAULT_PF_RULES_ACCEPT ? "ACCEPT" : "DROP");
+	write (fd, s, strlen(s));
+	am_free (s);
+	if (pf_rules->pf_rules_subnets != NULL)
+		write (fd, pf_rules->pf_rules_subnets, strlen (pf_rules->pf_rules_subnets));
+
+	s = strdup ("\n[END]\n");
+	write (fd, s, strlen(s));
+	am_free (s);
+	
   close (fd);
 	return 0;
 }
