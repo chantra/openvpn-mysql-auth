@@ -36,9 +36,9 @@ is_true (const char *value){
   return 0;
 }
 
-static enum default_pf_rules
+enum default_pf_rules
 pf_default_drop_or_accept (const char *value){
-  if (!strcasecmp (value, "accept"))
+  if (value != NULL && !strcasecmp (value, "accept"))
     return DEFAULT_PF_RULES_ACCEPT;
   return DEFAULT_PF_RULES_DROP;
 }
@@ -54,30 +54,10 @@ plugin_conf_new(const char *file)
 		return NULL;
 	
 	conf = am_malloc (sizeof (struct plugin_conf));
-
+  am_memset (conf, 0, sizeof (struct plugin_conf));
 	/* init default values */
-	conf->hostname = NULL;
-	conf->login = NULL;
-	conf->passw = NULL;
-	conf->db = NULL;
-	conf->s_path = NULL;
-	conf->port = 0;
   conf->default_pf_rules_clients = DEFAULT_PF_RULES_DROP;
   conf->default_pf_rules_subnets = DEFAULT_PF_RULES_DROP;
-  /* debug */
-  conf->debug_sql = 0;
-  /* queries */
-	conf->tls_verify_query = NULL;
-	conf->tls_final_query = NULL;
-	conf->client_connect_query = NULL;
-	conf->client_disconnect_query = NULL;
-	conf->learn_address_query = NULL;
-	conf->enable_pf_default_rules_query = NULL;
-	conf->enable_pf_rules_query = NULL;
-	conf->auth_user_pass_verify_query = NULL;
-	conf->auth_user_pass_verify_user_access_query = NULL;
-	conf->auth_user_pass_verify_group_access_query = NULL;
-  
 
 
 	while(!feof(ffd))
@@ -124,10 +104,6 @@ plugin_conf_new(const char *file)
 				conf->s_path = (char*) malloc(sizeof(char) * strlen(value) + 1);
 				strncpy(conf->s_path, value, strlen(value)+1);
 			}   
-		}else if (!strcmp (name, "default_pf_rules_clients")){
-      conf->default_pf_rules_clients = pf_default_drop_or_accept (value);
-		}else if (!strcmp (name, "default_pf_rules_subnets")){
-      conf->default_pf_rules_subnets = pf_default_drop_or_accept (value);
 		}else if (!strcmp (name, "debug_sql")){
       conf->debug_sql = is_true (value);
     }else if (!strcmp (name, "tls_verify_query")){
@@ -141,14 +117,33 @@ plugin_conf_new(const char *file)
 		}else if (!strcmp (name, "learn_address_query")){
 			conf->learn_address_query = strdup (value);
     /* ENABLE PF */
-		}else if (!strcmp (name, "enable_pf_clients_default_rules_query")){
-			conf->enable_pf_clients_default_rules_query = strdup (value);
-		}else if (!strcmp (name, "enable_pf_clients_rules_query")){
-			conf->enable_pf_clients_rules_query = strdup (value);
-		}else if (!strcmp (name, "enable_pf_subnets_default_rules_query")){
-			conf->enable_pf_subnets_default_rules_query = strdup (value);
-		}else if (!strcmp (name, "enable_pf_subnets_rules_query")){
-			conf->enable_pf_subnets_rules_query = strdup (value);
+    /* default rules */
+		}else if (!strcmp (name, "default_pf_rules_clients")){
+      conf->default_pf_rules_clients = pf_default_drop_or_accept (value);
+		}else if (!strcmp (name, "default_pf_rules_subnets")){
+      conf->default_pf_rules_subnets = pf_default_drop_or_accept (value);
+		}else if (!strcmp (name, "pf_rules_clients")){
+      conf->pf_rules_clients = strdup (value);
+		}else if (!strcmp (name, "pf_rules_subnets")){
+      conf->pf_rules_subnets = strdup (value);
+
+    /* rules from mysql */
+		}else if (!strcmp (name, "enable_pf_clients_user_default_rules_query")){
+			conf->enable_pf_clients_user_default_rules_query = strdup (value);
+		}else if (!strcmp (name, "enable_pf_clients_user_rules_query")){
+			conf->enable_pf_clients_user_rules_query = strdup (value);
+		}else if (!strcmp (name, "enable_pf_subnets_user_default_rules_query")){
+			conf->enable_pf_subnets_user_default_rules_query = strdup (value);
+		}else if (!strcmp (name, "enable_pf_subnets_user_rules_query")){
+			conf->enable_pf_subnets_user_rules_query = strdup (value);
+		}else if (!strcmp (name, "enable_pf_clients_group_default_rules_query")){
+			conf->enable_pf_clients_group_default_rules_query = strdup (value);
+		}else if (!strcmp (name, "enable_pf_clients_group_rules_query")){
+			conf->enable_pf_clients_group_rules_query = strdup (value);
+		}else if (!strcmp (name, "enable_pf_subnets_group_default_rules_query")){
+			conf->enable_pf_subnets_group_default_rules_query = strdup (value);
+		}else if (!strcmp (name, "enable_pf_subnets_group_rules_query")){
+			conf->enable_pf_subnets_group_rules_query = strdup (value);
     /* AUTH USER PASS VERIFY */
 		}else if (!strcmp (name, "auth_user_pass_verify_query")){
 			conf->auth_user_pass_verify_query = strdup (value);
@@ -178,9 +173,8 @@ void
 plugin_conf_free (struct plugin_conf *conf)
 {
 	if (conf == NULL)
-	{
 		return;
-	}
+
 	FREE_IF_NOT_NULL (conf->hostname);	
 	FREE_IF_NOT_NULL (conf->login);	
 	FREE_IF_NOT_NULL (conf->passw);	
@@ -191,13 +185,51 @@ plugin_conf_free (struct plugin_conf *conf)
 	FREE_IF_NOT_NULL (conf->client_connect_query);
 	FREE_IF_NOT_NULL (conf->client_disconnect_query);
 	FREE_IF_NOT_NULL (conf->learn_address_query);
-	FREE_IF_NOT_NULL (conf->enable_pf_clients_default_rules_query);
-	FREE_IF_NOT_NULL (conf->enable_pf_clients_rules_query);
-	FREE_IF_NOT_NULL (conf->enable_pf_subnets_default_rules_query);
-	FREE_IF_NOT_NULL (conf->enable_pf_subnets_rules_query);
+	FREE_IF_NOT_NULL (conf->pf_rules_clients);
+	FREE_IF_NOT_NULL (conf->pf_rules_subnets);
+  /* PF */
+	FREE_IF_NOT_NULL (conf->enable_pf_clients_user_default_rules_query);
+	FREE_IF_NOT_NULL (conf->enable_pf_clients_user_rules_query);
+	FREE_IF_NOT_NULL (conf->enable_pf_subnets_user_default_rules_query);
+	FREE_IF_NOT_NULL (conf->enable_pf_subnets_user_rules_query);
+	FREE_IF_NOT_NULL (conf->enable_pf_clients_group_default_rules_query);
+	FREE_IF_NOT_NULL (conf->enable_pf_clients_group_rules_query);
+	FREE_IF_NOT_NULL (conf->enable_pf_subnets_group_default_rules_query);
+	FREE_IF_NOT_NULL (conf->enable_pf_subnets_group_rules_query);
+  /* AUTH */
 	FREE_IF_NOT_NULL (conf->auth_user_pass_verify_query);
 	FREE_IF_NOT_NULL (conf->auth_user_pass_verify_user_access_query);
 	FREE_IF_NOT_NULL (conf->auth_user_pass_verify_group_access_query);
 	
 	FREE_IF_NOT_NULL (conf);	
+}
+
+int
+plugin_conf_pf_enabled_user (struct plugin_conf *conf){
+  if ( conf != NULL
+      &&
+      (
+        (conf->enable_pf_clients_user_default_rules_query && conf->enable_pf_clients_user_rules_query
+        && conf->enable_pf_subnets_user_default_rules_query && conf->enable_pf_subnets_user_rules_query)
+      ))
+    return 1;
+  return 0;
+}
+
+int
+plugin_conf_pf_enabled_group (struct plugin_conf *conf){
+  if ( conf != NULL
+      &&
+      (
+        (conf->enable_pf_clients_group_default_rules_query && conf->enable_pf_clients_group_rules_query
+        && conf->enable_pf_subnets_group_default_rules_query && conf->enable_pf_subnets_group_rules_query)
+      ))
+    return 1;
+  return 0;
+}
+int
+plugin_conf_pf_enabled (struct plugin_conf *conf){
+  if ( plugin_conf_pf_enabled_user (conf) || plugin_conf_pf_enabled_group (conf))
+    return 1;
+  return 0;
 }

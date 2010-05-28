@@ -25,6 +25,7 @@
 
 
 enum default_pf_rules {
+  DEFAULT_PF_RULES_UNKNOWN = -1,
   DEFAULT_PF_RULES_DROP = 0,
   DEFAULT_PF_RULES_ACCEPT
 };
@@ -39,6 +40,8 @@ struct plugin_conf
 	int  port;
   enum default_pf_rules default_pf_rules_clients; 
   enum default_pf_rules default_pf_rules_subnets;
+  char *pf_rules_clients;
+  char *pf_rules_subnets;
 
   /* DEBUG */
   char  debug_sql;
@@ -51,15 +54,24 @@ struct plugin_conf
   char *client_connect_query;
   char *client_disconnect_query;
   char *learn_address_query;
-  char *enable_pf_clients_default_rules_query;
-  char *enable_pf_clients_rules_query;
-  char *enable_pf_subnets_default_rules_query;
-  char *enable_pf_subnets_rules_query;
+  /* packet filter */
+  char *enable_pf_clients_user_default_rules_query;
+  char *enable_pf_clients_user_rules_query;
+  char *enable_pf_subnets_user_default_rules_query;
+  char *enable_pf_subnets_user_rules_query;
+  char *enable_pf_clients_group_default_rules_query;
+  char *enable_pf_clients_group_rules_query;
+  char *enable_pf_subnets_group_default_rules_query;
+  char *enable_pf_subnets_group_rules_query;
+
 };
 
 
 
-struct plugin_conf    *plugin_conf_new (const char *);
-void                  plugin_conf_free (struct plugin_conf *conf);
-
+extern struct plugin_conf   *plugin_conf_new (const char *);
+extern void                 plugin_conf_free (struct plugin_conf *conf);
+extern int                  plugin_conf_pf_enabled (struct plugin_conf *conf);
+extern int                  plugin_conf_pf_enabled_user (struct plugin_conf *conf);
+extern int                  plugin_conf_pf_enabled_group (struct plugin_conf *conf);
+extern enum default_pf_rules pf_default_drop_or_accept (const char *value);
 #endif

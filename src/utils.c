@@ -31,7 +31,8 @@ am_malloc ( size_t size ){
 
 void
 am_free ( void *ptr ){
-  free ( ptr );
+  if (ptr != NULL)
+    free ( ptr );
 }
 
 void *

@@ -125,8 +125,8 @@ openvpn_plugin_open_v2 (unsigned int *type_mask, const char *argv[],
     *type_mask |= OPENVPN_PLUGIN_MASK ( OPENVPN_PLUGIN_LEARN_ADDRESS );
     DEBUG_PLUGIN(context, "Registered callback OPENVPN_PLUGIN_LEARN_ADDRESS\n");
   }
-  if (context->conf->enable_pf_clients_default_rules_query && context->conf->enable_pf_clients_rules_query
-      && context->conf->enable_pf_subnets_default_rules_query && context->conf->enable_pf_subnets_rules_query){
+  /* only register PF callback if user or group rules are defined */
+  if (plugin_conf_pf_enabled (context->conf)){
     *type_mask |= OPENVPN_PLUGIN_MASK ( OPENVPN_PLUGIN_ENABLE_PF );
     DEBUG_PLUGIN(context, "Registered callback OPENVPN_PLUGIN_ENABLE_PF\n");
   }
@@ -162,6 +162,12 @@ openvpn_plugin_func_v2 (openvpn_plugin_handle_t handle, const int type,
     dump_env (envp);
     dump_env (argv);
     */
+    /** We should only land here if user or group rules are defined, but anyway
+     * we better double check we have something defined
+     */
+    if (plugin_conf_pf_enabled (context->conf)){
+        return OPENVPN_PLUGIN_FUNC_SUCCESS;
+    }
     return OPENVPN_PLUGIN_FUNC_ERROR;
   }
   if (type == OPENVPN_PLUGIN_CLIENT_DISCONNECT){
