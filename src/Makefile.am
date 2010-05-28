@@ -6,6 +6,7 @@ mysql_auth_SOURCES = plugin_conf.c plugin_conf.h \
 							list.c list.h \
 							kvp.c kvp.h \
 							debug.c debug.h \
+							pf.c pf.h \
 							am_mysql.c am_mysql.h
 
 libopenvpn_mysql_auth_la_SOURCES = mysql-auth.c \

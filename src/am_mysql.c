@@ -27,6 +27,7 @@
 #include <time.h>
 
 #include "am_mysql.h"
+#include "pf.h"
 #include "utils.h"
 #include "list.h"
 #include "kvp.h"
@@ -404,8 +405,7 @@ _am_mysql_handle_default_pf_rules (
     MYSQL                 *mysql,
     struct plugin_conf    *conf,
     am_list_t             *expandable_vars,
-    enum default_pf_rules *default_pf_rules_clients,
-    enum default_pf_rules *default_pf_rules_subnets)
+    struct pf_rules *pf_rules)
 {
 
   char *query_res = NULL;
@@ -419,8 +419,8 @@ _am_mysql_handle_default_pf_rules (
    * we get them from the configuration defaults
    */
   /* set default rules to unknown */
-  *default_pf_rules_clients = DEFAULT_PF_RULES_UNKNOWN;
-  *default_pf_rules_subnets = DEFAULT_PF_RULES_UNKNOWN;
+  pf_rules->default_pf_rules_clients = DEFAULT_PF_RULES_UNKNOWN;
+  pf_rules->default_pf_rules_subnets = DEFAULT_PF_RULES_UNKNOWN;
   /* 1) get the default rules for user */
   if (plugin_conf_pf_enabled_user (conf)){
     /* clients */
@@ -431,7 +431,7 @@ _am_mysql_handle_default_pf_rules (
       query_res = _am_mysql_query_return_row_0 (mysql, q);
       am_free (q);  
       if (query_res != NULL){
-        *default_pf_rules_clients = _am_calculate_pf_rule (*default_pf_rules_clients, query_res);
+        pf_rules->default_pf_rules_clients = _am_calculate_pf_rule (pf_rules->default_pf_rules_clients, query_res);
         am_free (query_res);
       }
     }
@@ -441,16 +441,16 @@ _am_mysql_handle_default_pf_rules (
       LOGERROR ("Could not set expandable variables for pf subnets default rules at user level\n");
     }else{
       query_res = _am_mysql_query_return_row_0 (mysql, q);
-      am_free (q);  
+      am_free (q);
       if (query_res != NULL){
-        *default_pf_rules_subnets = _am_calculate_pf_rule (*default_pf_rules_subnets, query_res);
+        pf_rules->default_pf_rules_subnets = _am_calculate_pf_rule (pf_rules->default_pf_rules_subnets, query_res);
         am_free (query_res);
       }
     }
   }
   /* 2) get the default rules for groups if still UNKNOWN */
   if (plugin_conf_pf_enabled_group (conf)){
-    if (*default_pf_rules_clients == DEFAULT_PF_RULES_UNKNOWN){
+    if (pf_rules->default_pf_rules_clients == DEFAULT_PF_RULES_UNKNOWN){
       q = expand_query (conf->enable_pf_clients_group_default_rules_query, expandable_vars);
       if (q == NULL){
         LOGERROR ("Could not set expandable variables for pf clients default rules at group level\n");
@@ -458,12 +458,12 @@ _am_mysql_handle_default_pf_rules (
         query_res = _am_mysql_query_return_row_0 (mysql, q);
         am_free (q);  
         if (query_res != NULL){
-          *default_pf_rules_clients = _am_calculate_pf_rule (*default_pf_rules_clients, query_res);
+          pf_rules->default_pf_rules_clients = _am_calculate_pf_rule (pf_rules->default_pf_rules_clients, query_res);
           am_free (query_res);
         }
       }
     }
-    if (*default_pf_rules_subnets == DEFAULT_PF_RULES_UNKNOWN){
+    if (pf_rules->default_pf_rules_subnets == DEFAULT_PF_RULES_UNKNOWN){
       q = expand_query (conf->enable_pf_subnets_group_default_rules_query, expandable_vars);
       if (q == NULL){
         LOGERROR ("Could not set expandable variables for pf subnets default rules at group level\n");
@@ -471,17 +471,17 @@ _am_mysql_handle_default_pf_rules (
         query_res = _am_mysql_query_return_row_0 (mysql, q);
         am_free (q);  
         if (query_res != NULL){
-          *default_pf_rules_subnets = _am_calculate_pf_rule (*default_pf_rules_subnets, query_res);
+          pf_rules->default_pf_rules_subnets = _am_calculate_pf_rule (pf_rules->default_pf_rules_subnets, query_res);
           am_free (query_res);
         }
       }
     }
   }
   /* 3) if still unknown get the default rules from config */
-  if (*default_pf_rules_clients == DEFAULT_PF_RULES_UNKNOWN)
-    *default_pf_rules_clients = conf->default_pf_rules_clients;
-  if (*default_pf_rules_subnets == DEFAULT_PF_RULES_UNKNOWN)
-    *default_pf_rules_subnets = conf->default_pf_rules_subnets;
+  if (pf_rules->default_pf_rules_clients == DEFAULT_PF_RULES_UNKNOWN)
+    pf_rules->default_pf_rules_clients = conf->pf_rules->default_pf_rules_clients;
+  if (pf_rules->default_pf_rules_subnets == DEFAULT_PF_RULES_UNKNOWN)
+    pf_rules->default_pf_rules_subnets = conf->pf_rules->default_pf_rules_subnets;
 }
 /**
  * handle pf_rules
@@ -491,8 +491,7 @@ _am_mysql_handle_pf_rules (
     MYSQL                 *mysql,
     struct plugin_conf    *conf,
     am_list_t             *expandable_vars,
-    char **pf_rules_clients,
-    char **pf_rules_subnets)
+    struct pf_rules *pf_rules)
 {
 
   char *query_res = NULL;
@@ -506,8 +505,8 @@ _am_mysql_handle_pf_rules (
    * we get them from the configuration defaults
    */
   /* set default rules to unknown */
-  *pf_rules_clients = NULL;
-  *pf_rules_subnets = NULL;
+  pf_rules->pf_rules_clients = NULL;
+  pf_rules->pf_rules_subnets = NULL;
   /* 1) get the default rules for user */
   if (plugin_conf_pf_enabled_user (conf)){
     /* clients */
@@ -518,7 +517,7 @@ _am_mysql_handle_pf_rules (
       query_res = _am_mysql_query_return_row_0 (mysql, q);
       am_free (q);  
       if (query_res != NULL){
-        *pf_rules_clients = query_res;
+        pf_rules->pf_rules_clients = query_res;
       }
     }
     /* subnets */
@@ -529,13 +528,13 @@ _am_mysql_handle_pf_rules (
       query_res = _am_mysql_query_return_row_0 (mysql, q);
       am_free (q);  
       if (query_res != NULL){
-        *pf_rules_subnets = query_res;
+        pf_rules->pf_rules_subnets = query_res;
       }
     }
   }
   /* 2) get the default rules for groups if still UNKNOWN */
   if (plugin_conf_pf_enabled_group (conf)){
-    if (*pf_rules_clients == NULL){
+    if (pf_rules->pf_rules_clients == NULL){
       q = expand_query (conf->enable_pf_clients_group_rules_query, expandable_vars);
       if (q == NULL){
         LOGERROR ("Could not set expandable variables for pf clients rules at group level\n");
@@ -543,11 +542,11 @@ _am_mysql_handle_pf_rules (
         query_res = _am_mysql_query_return_row_0 (mysql, q);
         am_free (q);  
         if (query_res != NULL){
-          *pf_rules_clients = query_res;
+          pf_rules->pf_rules_clients = query_res;
         }
       }
     }
-    if (*pf_rules_subnets == NULL){
+    if (pf_rules->pf_rules_subnets == NULL){
       q = expand_query (conf->enable_pf_subnets_group_rules_query, expandable_vars);
       if (q == NULL){
         LOGERROR ("Could not set expandable variables for pf subnets rules at group level\n");
@@ -555,45 +554,16 @@ _am_mysql_handle_pf_rules (
         query_res = _am_mysql_query_return_row_0 (mysql, q);
         am_free (q);  
         if (query_res != NULL){
-          *pf_rules_subnets = query_res;
+          pf_rules->pf_rules_subnets = query_res;
         }
       }
     }
   }
   /* 3) if still unknown get the default rules from config */
-  if (*pf_rules_clients == NULL && conf->pf_rules_clients != NULL)
-    *pf_rules_clients = strdup (conf->pf_rules_clients);
-  if (*pf_rules_subnets == NULL && conf->pf_rules_subnets != NULL)
-    *pf_rules_subnets = strdup (conf->pf_rules_subnets);
-}
-/**
- * write pf_file given the rules
- */
-void
-_am_mysql_write_pf_file (const char *pf_file,
-                        enum default_pf_rules default_pf_rules_clients,
-                        enum default_pf_rules default_pf_rules_subnets,
-                        char *pf_rules_clients,
-                        char *pf_rules_subnets)
-{
-  int fd = open (pf_file, O_WRONLY);
-  if (fd == -1){
-    LOGERROR ("Could not open file %s in write mode\n", pf_file); 
-    return;
-  }
-  /* TODO write rules to file
- * [CLIENTS DROP|ACCEPT]
- * {+|-}common_name1
- * {+|-}common_name2
- * . . .
- * [SUBNETS DROP|ACCEPT]
- * {+|-}subnet1
- * {+|-}subnet2
- * . . .
- * [END]
- */
-  close (fd);
-
+  if (pf_rules->pf_rules_clients == NULL && conf->pf_rules->pf_rules_clients != NULL)
+    pf_rules->pf_rules_clients = strdup (conf->pf_rules->pf_rules_clients);
+  if (pf_rules->pf_rules_subnets == NULL && conf->pf_rules->pf_rules_subnets != NULL)
+    pf_rules->pf_rules_subnets = strdup (conf->pf_rules->pf_rules_subnets);
 }
 
 /**
@@ -610,10 +580,7 @@ am_mysql_handle_auth_user_pass_verify (struct plugin_conf *conf, struct client_c
   const char *pf_file = NULL;
   char *q = NULL;
   char rc = -1;
-  enum default_pf_rules default_pf_rules_clients;
-  enum default_pf_rules default_pf_rules_subnets; 
-  char *pf_rules_clients = NULL;
-  char *pf_rules_subnets = NULL;
+  struct pf_rules *pf_rules = NULL;
 
   if (am_mysql_prepare_mysql (&mysql, conf) < 0 ){
     LOGERROR ("Could not prepare MySQL connection in am_mysql_handle_auth_user_pass_verify\n");
@@ -691,17 +658,22 @@ handle_auth_user_pass_verify_allowed:
       LOGWARNING ("PF enabled, but no pf_file available in envp\n");
       goto handle_auth_user_pass_verify_free;
     }
+    pf_rules = pf_rules_new ();
+    if (pf_rules == NULL){
+      LOGWARNING ("PF enabled, but could not allocate memory for pf_rules struct\n");
+      goto handle_auth_user_pass_verify_free;
+    }
     /* Default rules */
-    _am_mysql_handle_default_pf_rules (&mysql, conf, l, &default_pf_rules_clients, &default_pf_rules_subnets);
+    _am_mysql_handle_default_pf_rules (&mysql, conf, l, pf_rules);
     /* And now, for the rules themselves */
-    _am_mysql_handle_pf_rules (&mysql, conf, l, &pf_rules_clients, &pf_rules_subnets);
-    if (pf_rules_clients)
-      fprintf(stderr, "client rules: %s\n", pf_rules_clients);
+    _am_mysql_handle_pf_rules (&mysql, conf, l, pf_rules);
+    if (pf_rules->pf_rules_clients)
+      fprintf(stderr, "client rules: %s\n", pf_rules->pf_rules_clients);
 
-    if (pf_rules_subnets)
-      fprintf(stderr, "subnets rules: %s\n", pf_rules_subnets);
+    if (pf_rules->pf_rules_subnets)
+      fprintf(stderr, "subnets rules: %s\n", pf_rules->pf_rules_subnets);
     /* write the rules to pf file */
-    _am_mysql_write_pf_file (pf_file, default_pf_rules_clients, default_pf_rules_subnets, pf_rules_clients, pf_rules_subnets);
+    pf_rules_to_file (pf_rules, pf_file);
   } 
 handle_auth_user_pass_verify_free:
   /* Free resources */
@@ -712,10 +684,7 @@ handle_auth_user_pass_verify_free:
   mysql_close(&mysql);
   if (q != NULL)
     am_free (q);
-  if (pf_rules_clients != NULL)
-    am_free (pf_rules_clients);
-  if (pf_rules_subnets != NULL)
-    am_free (pf_rules_subnets);
+  pf_rules_free (pf_rules); 
   return rc;
 }
 

@@ -23,12 +23,7 @@
 #ifndef _PLUGIN_CONF_H_
 #define _PLUGIN_CONF_H_
 
-
-enum default_pf_rules {
-  DEFAULT_PF_RULES_UNKNOWN = -1,
-  DEFAULT_PF_RULES_DROP = 0,
-  DEFAULT_PF_RULES_ACCEPT
-};
+#include "pf.h"
 
 struct plugin_conf
 {
@@ -38,11 +33,7 @@ struct plugin_conf
 	char *db;
   char *s_path;
 	int  port;
-  enum default_pf_rules default_pf_rules_clients; 
-  enum default_pf_rules default_pf_rules_subnets;
-  char *pf_rules_clients;
-  char *pf_rules_subnets;
-
+  struct pf_rules *pf_rules;
   /* DEBUG */
   char  debug_sql;
   /* QUERIES */

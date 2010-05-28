@@ -56,8 +56,10 @@ plugin_conf_new(const char *file)
 	conf = am_malloc (sizeof (struct plugin_conf));
   am_memset (conf, 0, sizeof (struct plugin_conf));
 	/* init default values */
-  conf->default_pf_rules_clients = DEFAULT_PF_RULES_DROP;
-  conf->default_pf_rules_subnets = DEFAULT_PF_RULES_DROP;
+  conf->pf_rules = pf_rules_new ();
+  am_memset (conf->pf_rules, 0, sizeof (struct pf_rules));
+  conf->pf_rules->default_pf_rules_clients = DEFAULT_PF_RULES_DROP;
+  conf->pf_rules->default_pf_rules_subnets = DEFAULT_PF_RULES_DROP;
 
 
 	while(!feof(ffd))
@@ -119,13 +121,13 @@ plugin_conf_new(const char *file)
     /* ENABLE PF */
     /* default rules */
 		}else if (!strcmp (name, "default_pf_rules_clients")){
-      conf->default_pf_rules_clients = pf_default_drop_or_accept (value);
+      conf->pf_rules->default_pf_rules_clients = pf_default_drop_or_accept (value);
 		}else if (!strcmp (name, "default_pf_rules_subnets")){
-      conf->default_pf_rules_subnets = pf_default_drop_or_accept (value);
+      conf->pf_rules->default_pf_rules_subnets = pf_default_drop_or_accept (value);
 		}else if (!strcmp (name, "pf_rules_clients")){
-      conf->pf_rules_clients = strdup (value);
+      conf->pf_rules->pf_rules_clients = strdup (value);
 		}else if (!strcmp (name, "pf_rules_subnets")){
-      conf->pf_rules_subnets = strdup (value);
+      conf->pf_rules->pf_rules_subnets = strdup (value);
 
     /* rules from mysql */
 		}else if (!strcmp (name, "enable_pf_clients_user_default_rules_query")){
@@ -185,8 +187,7 @@ plugin_conf_free (struct plugin_conf *conf)
 	FREE_IF_NOT_NULL (conf->client_connect_query);
 	FREE_IF_NOT_NULL (conf->client_disconnect_query);
 	FREE_IF_NOT_NULL (conf->learn_address_query);
-	FREE_IF_NOT_NULL (conf->pf_rules_clients);
-	FREE_IF_NOT_NULL (conf->pf_rules_subnets);
+  pf_rules_free (conf->pf_rules);
   /* PF */
 	FREE_IF_NOT_NULL (conf->enable_pf_clients_user_default_rules_query);
 	FREE_IF_NOT_NULL (conf->enable_pf_clients_user_rules_query);
