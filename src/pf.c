@@ -48,7 +48,7 @@ pf_rules_free (struct pf_rules *pf_rules){
 int
 pf_rules_to_file (struct pf_rules *pf_rules, const char *pf_file){
 	char *s;
-  int fd = open (pf_file, O_WRONLY | O_CREAT, S_IRWXU);
+  int fd = open (pf_file, O_WRONLY | O_CREAT | O_TRUNC, S_IRWXU);
   if (fd == -1){
     LOGERROR ("Could not open file %s in write mode Error (%d) %s\n", pf_file, errno, strerror (errno)); 
     return -1;
