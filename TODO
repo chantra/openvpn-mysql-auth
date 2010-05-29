@@ -1,2 +1,7 @@
 * Document packet filter config and behaviour
+* Add a one pf_rules statement query that will retrieve:
+  - both default_{clients,subnets}
+  - both rules_{clients,subnets}
+  In one go instead of 4 queries
+* Merge rules when more than 1 group
 * Handle logging properly and more cleanly
