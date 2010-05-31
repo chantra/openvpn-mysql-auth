@@ -54,6 +54,7 @@ In order to make this plugin as flexible as possible so it can adapt to any exis
 *expandable variable* are available, see below
 
 Authentication:
+---------------
 User/Password authentication is done if at least *auth_user_pass_verify_query* is set up.
 It goes through 3 steps:
   - check user/password
@@ -79,6 +80,92 @@ It goes through 3 steps:
                                 OR
                                 if defined and user_access_query was not defined
 
+
+Packet Filtering:
+----------------
+Packet filtering can be enabled in 2 manners:
+1) using a single query to get default clients/subnets rules and clients/subnets rules
+2) using a query for each item needed, namely default clients rules, default subnets rules, clients rules, subnets rules
+
+1) is used if enable_pf_user_rules_query or enable_pf_group_rules_query is defined
+2) is used if:
+ - enable_pf_clients_user_default_rules_query, enable_pf_subnets_user_default_rules_query, enable_pf_clients_user_rules_query AND enable_pf_subnets_user_rules_query are defined
+ OR
+ - enable_pf_clients_group_default_rules_query, enable_pf_subnets_group_default_rules_query, enable_pf_clients_group_rules_query AND enable_pf_subnets_group_rules_query are defined  
+
+If either enable_pf_user_rules_query or enable_pf_group_rules_query is defined, query from 2) will not be tried.
+
+When resolving the rules that apply to a specific VPN connection, during auth-user-pass-verify, the plugin will first attempt to get the rules from the *user* rules,
+If it did not succeed, the plugin will try the rules for the *group* .
+Finally, if after this, the plugin did not manage to get rules for that specific connections, the default values from
+default_pf_rules_clients, default_pf_rules_subnets, pf_rules_clients, pf_rules_subnets will be used.
+By default, these options have the following default:
+default_pf_rules_clients (DROP)
+default_pf_rules_subnets (DROP)
+pf_rules_clients          (NULL)
+pf_rules_subnets          (NULL)
+
+Here are the options that are available for packet filtering:
+- Service wide:
+* default_pf_rules_clients
+                          If no default client behaviour for this specific connection
+                          could be found, this value will be used.
+                          Accepted values: ACCEPT,DROP
+                          Default: DROP
+* default_pf_rules_subnets
+                          If no default subnets behaviour for this specific connection
+                          could be found, this value will be used.
+                          Accepted values: ACCEPT,DROP
+                          Default: DROP
+* pf_rules_clients
+                          If no clients rules for this specific connection could be found this will be used
+                          Accepted value: any text that follow Packet Filtering grammar (see below)
+                          Default: NULL
+* pf_rules_subnets
+                          If no subnets rules for this specific connection could be found this will be used
+                          Accepted value: any text that follow Packet Filtering grammar (see below)
+                          Default: NULL
+
+- Single query
+enable_pf_user_rules_query
+                          Query that will retrieve PF rules for that connection.
+                          The 4 first fields of MySQL results will be used and must follow
+                          this order: default_clients_rule, default_subnets_rule, clients_rules, subnets_rules
+              Ex: SELECT f.default_clients, f.default_subnets, f.rules_clients, f.rules_subnets FROM firewall_rules f, user_firewall_rules uf WHERE f.firewall_rule_id=uf.firewall_rule_id AND uf.user_id={{user_id}} 
+enable_pf_group_rules_query
+                          Query that will retrieve PF rules for that connection.
+                          The 4 first fields of MySQL results will be used and must follow
+                          this order: default_clients_rule, default_subnets_rule, clients_rules, subnets_rules
+              Ex: SELECT f.default_clients, f.default_subnets, f.rules_clients, f.rules_subnets FROM firewall_rules f, group_firewall_rules gf, group_users gu WHERE f.firewall_rule_id=gf.firewall_rule_id AND gf.group_id=gu.group_id AND gu.user_id={{user_id}} 
+
+default_clients and default_subnets MUST BE ACCEPT or DROP (will default to drop if unknown value)
+clients_rules and subnets_rules must follow Packet Filtering grammar (see below). If NULL, no rules will be used.
+
+
+
+- Multiple queries
+In multiple query mode, each query must return its value in first row, first field.
+The options are:
+* enable_pf_clients_user_default_rules_query
+  ex: SELECT f.default_clients FROM firewall_rules f, user_firewall_rules uf WHERE f.firewall_rule_id=uf.firewall_rule_id AND uf.user_id={{user_id}} 
+* enable_pf_clients_user_rules_query
+  ex: SELECT f.rules_clients FROM firewall_rules f, user_firewall_rules uf WHERE f.firewall_rule_id=uf.firewall_rule_id AND uf.user_id={{user_id}}
+* enable_pf_subnets_user_default_rules_query
+  ex: SELECT f.default_subnets FROM firewall_rules f, user_firewall_rules uf WHERE f.firewall_rule_id=uf.firewall_rule_id AND uf.user_id={{user_id}}
+* enable_pf_subnets_user_rules_query
+  ex: SELECT f.rules_subnets FROM firewall_rules f, user_firewall_rules uf WHERE f.firewall_rule_id=uf.firewall_rule_id AND uf.user_id={{user_id}}
+AND
+* enable_pf_clients_group_default_rules_query
+  ex: SELECT f.default_clients FROM firewall_rules f, group_firewall_rules gf, group_users gu WHERE f.firewall_rule_id=gf.firewall_rule_id AND gf.group_id=gu.group_id AND gu.user_id={{user_id}}
+* enable_pf_clients_group_rules_query
+  ex: SELECT f.rules_clients FROM firewall_rules f, group_firewall_rules gf, group_users gu WHERE f.firewall_rule_id=gf.firewall_rule_id AND gf.group_id=gu.group_id AND gu.user_id={{user_id}}
+* enable_pf_subnets_group_default_rules_query
+  ex: SELECT f.default_subnets FROM firewall_rules f, group_firewall_rules gf, group_users gu WHERE f.firewall_rule_id=gf.firewall_rule_id AND gf.group_id=gu.group_id AND gu.user_id={{user_id}}
+* enable_pf_subnets_group_rules_query
+  ex: SELECT f.rules_subnets FROM firewall_rules f, group_firewall_rules gf, group_users gu WHERE f.firewall_rule_id=gf.firewall_rule_id AND gf.group_id=gu.group_id AND gu.user_id={{user_id}}
+
+NOTE: At most one row should be returned. In case more than one row is returned, the result will be discarded.
+That would mean that in case of "group" rules, the user can belong to only 1 group
 
 Expandable Variables:
 +++++++++++++++++++++
@@ -110,3 +197,36 @@ Callback calls:
 
 To check in what order the callback will be called, see 
 http://svn.openvpn.net/projects/openvpn/branches/BETA21/openvpn/openvpn-plugin.h
+
+Packet Filtering grammar (from openvpn-plugin.h)
+------------------------------------------------
+ * Packet filter file grammar:
+ *
+ * [CLIENTS DROP|ACCEPT]
+ * {+|-}common_name1
+ * {+|-}common_name2
+ * . . .
+ * [SUBNETS DROP|ACCEPT]
+ * {+|-}subnet1
+ * {+|-}subnet2
+ * . . .
+ * [END]
+ *
+ * Subnet: IP-ADDRESS | IP-ADDRESS/NUM_NETWORK_BITS
+ *
+ * CLIENTS refers to the set of clients (by their common-name) which
+ * this instance is allowed ('+') to connect to, or is excluded ('-')
+ * from connecting to.  Note that in the case of client-to-client
+ * connections, such communication must be allowed by the packet filter
+ * configuration files of both clients.
+ *
+ * SUBNETS refers to IP addresses or IP address subnets which this
+ * instance may connect to ('+') or is excluded ('-') from connecting
+ * to.
+ *
+ * DROP or ACCEPT defines default policy when there is no explicit match
+ * for a common-name or subnet.  The [END] tag must exist.  A special
+ * purpose tag called [KILL] will immediately kill the client instance.
+ * A given client or subnet rule applies to both incoming and outgoing
+ * packets.
+

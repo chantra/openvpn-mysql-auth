@@ -46,10 +46,12 @@ struct plugin_conf
   char *client_disconnect_query;
   char *learn_address_query;
   /* packet filter */
+  char *enable_pf_user_rules_query;
   char *enable_pf_clients_user_default_rules_query;
   char *enable_pf_clients_user_rules_query;
   char *enable_pf_subnets_user_default_rules_query;
   char *enable_pf_subnets_user_rules_query;
+  char *enable_pf_group_rules_query;
   char *enable_pf_clients_group_default_rules_query;
   char *enable_pf_clients_group_rules_query;
   char *enable_pf_subnets_group_default_rules_query;

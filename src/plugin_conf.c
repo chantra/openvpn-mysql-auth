@@ -130,6 +130,8 @@ plugin_conf_new(const char *file)
       conf->pf_rules->pf_rules_subnets = strdup (value);
 
     /* rules from mysql */
+    }else if (!strcmp (name, "enable_pf_user_rules_query")){
+      conf->enable_pf_user_rules_query = strdup (value);
 		}else if (!strcmp (name, "enable_pf_clients_user_default_rules_query")){
 			conf->enable_pf_clients_user_default_rules_query = strdup (value);
 		}else if (!strcmp (name, "enable_pf_clients_user_rules_query")){
@@ -138,6 +140,8 @@ plugin_conf_new(const char *file)
 			conf->enable_pf_subnets_user_default_rules_query = strdup (value);
 		}else if (!strcmp (name, "enable_pf_subnets_user_rules_query")){
 			conf->enable_pf_subnets_user_rules_query = strdup (value);
+    }else if (!strcmp (name, "enable_pf_group_rules_query")){
+      conf->enable_pf_group_rules_query = strdup (value);
 		}else if (!strcmp (name, "enable_pf_clients_group_default_rules_query")){
 			conf->enable_pf_clients_group_default_rules_query = strdup (value);
 		}else if (!strcmp (name, "enable_pf_clients_group_rules_query")){
@@ -189,10 +193,12 @@ plugin_conf_free (struct plugin_conf *conf)
 	FREE_IF_NOT_NULL (conf->learn_address_query);
   pf_rules_free (conf->pf_rules);
   /* PF */
+  FREE_IF_NOT_NULL (conf->enable_pf_user_rules_query);
 	FREE_IF_NOT_NULL (conf->enable_pf_clients_user_default_rules_query);
 	FREE_IF_NOT_NULL (conf->enable_pf_clients_user_rules_query);
 	FREE_IF_NOT_NULL (conf->enable_pf_subnets_user_default_rules_query);
 	FREE_IF_NOT_NULL (conf->enable_pf_subnets_user_rules_query);
+  FREE_IF_NOT_NULL (conf->enable_pf_group_rules_query);
 	FREE_IF_NOT_NULL (conf->enable_pf_clients_group_default_rules_query);
 	FREE_IF_NOT_NULL (conf->enable_pf_clients_group_rules_query);
 	FREE_IF_NOT_NULL (conf->enable_pf_subnets_group_default_rules_query);
@@ -209,7 +215,7 @@ int
 plugin_conf_pf_enabled_user (struct plugin_conf *conf){
   if ( conf != NULL
       &&
-      (
+      ( conf->enable_pf_user_rules_query ||
         (conf->enable_pf_clients_user_default_rules_query && conf->enable_pf_clients_user_rules_query
         && conf->enable_pf_subnets_user_default_rules_query && conf->enable_pf_subnets_user_rules_query)
       ))
@@ -221,7 +227,7 @@ int
 plugin_conf_pf_enabled_group (struct plugin_conf *conf){
   if ( conf != NULL
       &&
-      (
+      ( conf->enable_pf_group_rules_query || 
         (conf->enable_pf_clients_group_default_rules_query && conf->enable_pf_clients_group_rules_query
         && conf->enable_pf_subnets_group_default_rules_query && conf->enable_pf_subnets_group_rules_query)
       ))

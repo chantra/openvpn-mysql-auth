@@ -560,12 +560,164 @@ _am_mysql_handle_pf_rules (
     }
   }
   /* 3) if still unknown get the default rules from config */
+  pf_rules->default_pf_rules_clients = conf->pf_rules->default_pf_rules_clients;
+  pf_rules->default_pf_rules_subnets = conf->pf_rules->default_pf_rules_subnets;
   if (pf_rules->pf_rules_clients == NULL && conf->pf_rules->pf_rules_clients != NULL)
     pf_rules->pf_rules_clients = strdup (conf->pf_rules->pf_rules_clients);
   if (pf_rules->pf_rules_subnets == NULL && conf->pf_rules->pf_rules_subnets != NULL)
     pf_rules->pf_rules_subnets = strdup (conf->pf_rules->pf_rules_subnets);
 }
 
+/**
+ * handle the actual query of _am_mysql_handle_pf_rules_single_query
+ * given the query to execute
+ */
+int
+_am_mysql_handle_pf_rules_do_single_query (
+    MYSQL                 *mysql,
+    char                  *query,
+    am_list_t             *expandable_vars,
+    struct pf_rules *pf_rules)
+{
+  MYSQL_RES			*result = NULL;
+  MYSQL_ROW     row;
+  unsigned long *lengths;
+  int rc = 0;
+  my_ulonglong  num_rows;
+  char *fmt_query = NULL;
+
+  if (query == NULL)
+    retun -1;
+
+  fmt_query = expand_query (query, expandable_vars);
+
+  if (fmt_query == NULL){
+    LOGERROR ("Could not set expandable variables in _am_mysql_handle_default_pf_rules_query\n");
+    return -1;
+  }
+
+	/* Now for the query itself */
+	if (mysql_query(mysql, fmt_query))
+	{
+		/* query failed */
+		rc = -1;
+		LOGERROR ("_am_mysql_handle_default_pf_rules_query: Failed to execute query: Error (%d): %s\n", mysql_errno(mysql), mysql_error(mysql));
+		goto _handle_pf_rules_do_single_query;
+	}
+  am_free (fmt_query);
+
+	if ((result = mysql_store_result(mysql)) == NULL)
+	{
+		/*
+		* Failed to get result
+		* 2 cases:
+		*		- no result expected (after an insert statement...
+		*		- error getting result
+		*/
+		if (mysql_field_count (mysql) == 0){
+			/* insert like statement, should not happen!; */
+			rc = -1;
+			goto _handle_pf_rules_do_single_query;
+		}else{
+			rc = -1;
+			LOGERROR ("_am_mysql_handle_default_pf_rules_query: Failed to store query results: Error (%d): %s\n", mysql_errno(mysql), mysql_error(mysql));
+			goto _handle_pf_rules_do_single_query;
+		}
+	}
+  num_rows = mysql_num_rows(result);
+	/* If num_rows > 1, we consider it is an error */
+	if (num_rows > 1 ){
+    rc = -1;
+    LOGERROR ("_am_mysql_handle_default_pf_rules_query: Many results were found while only 1 was expected!\n");
+    goto _handle_pf_rules_do_single_query;
+  }
+  if (num_rows == 0){
+    /* no result found */
+    rc = 0;
+    goto _handle_pf_rules_do_single_query;
+  }
+  /* If we dont have 4 fields, we should fail too */
+  if (mysql_num_fields(result) != 4 ){
+    rc = -1;
+    LOGERROR ("_am_mysql_handle_default_pf_rules_query: MySQL result do not contain exactly 4 fields!\n");
+    goto _handle_pf_rules_do_single_query;
+  }
+
+  row = mysql_fetch_row(result);
+  if (row == NULL){
+    /* An error occurred */
+    rc = -1;
+    LOGERROR ("_am_mysql_handle_default_pf_rules_query: Failed to return first row, Error (%d): %s\n", mysql_errno(mysql), mysql_error(mysql));
+    goto _handle_pf_rules_do_single_query;
+  }
+  lengths = mysql_fetch_lengths(result);
+  /* no we set the values */
+  rc = 1;
+  /* default rules */
+  pf_rules->default_pf_rules_clients = pf_default_drop_or_accept (row[0]);
+  pf_rules->default_pf_rules_subnets = pf_default_drop_or_accept (row[1]);
+  /* clients rules */
+  if ( lengths[2] != 0 ){
+    pf_rules->pf_rules_clients = am_malloc (lengths[2] + 1);
+    if (pf_rules->pf_rules_clients == NULL){
+      LOGERROR ("Could not allocate memory for pf_rules_clients\n");
+    }else{
+      memcpy (pf_rules->pf_rules_clients, row[2], lengths[2]);
+      pf_rules->pf_rules_clients[lengths[2]] = '\0';
+    }
+  }else{
+    pf_rules->pf_rules_clients = NULL;
+  }
+  /* subnets rules */
+  if ( lengths[3] != 0 ){
+    pf_rules->pf_rules_subnets = am_malloc (lengths[3] + 1);
+    if (pf_rules->pf_rules_subnets == NULL){
+      LOGERROR ("Could not allocate memory for pf_rules_subnets\n");
+    }else{
+      memcpy (pf_rules->pf_rules_subnets, row[3], lengths[3]);
+      pf_rules->pf_rules_subnets[lengths[3]] = '\0';
+    }
+  }else{
+    pf_rules->pf_rules_subnets = NULL;
+  }
+_handle_pf_rules_do_single_query:
+  if (result != NULL)
+    mysql_free_result (result);
+  return rc;
+}
+
+/**
+ * handle pf rules single query
+ * instead of having one query for each default rules
+ * and for the rules themselves, we will get all result in such way
+ * dft_clienbts, dft_subnets, rules_clients, rules_subnets
+ * if user rule return no row, group rule will be tried
+ * if still no results, default conf will be used
+ */
+void
+_am_mysql_handle_pf_rules_single_query (
+    MYSQL                 *mysql,
+    struct plugin_conf    *conf,
+    am_list_t             *expandable_vars,
+    struct pf_rules *pf_rules)
+{
+  /* try user rules */
+  if (_am_mysql_handle_pf_rules_do_single_query (mysql, conf->enable_pf_user_rules_query, expandable_vars, pf_rules) == 1){
+    return;
+  }
+  /* try group rules */
+  if (_am_mysql_handle_pf_rules_do_single_query (mysql, conf->enable_pf_group_rules_query, expandable_vars, pf_rules) == 1){
+    return;
+  }
+  /* finally use default values */
+  if (pf_rules->pf_rules_clients == NULL && conf->pf_rules->pf_rules_clients != NULL)
+    pf_rules->pf_rules_clients = strdup (conf->pf_rules->pf_rules_clients);
+  if (pf_rules->pf_rules_subnets == NULL && conf->pf_rules->pf_rules_subnets != NULL)
+    pf_rules->pf_rules_subnets = strdup (conf->pf_rules->pf_rules_subnets);
+
+  pf_rules->default_pf_rules_clients = conf->pf_rules->default_pf_rules_clients;
+  pf_rules->default_pf_rules_subnets = conf->pf_rules->default_pf_rules_subnets;
+}
 /**
  * handle user auth
  */
@@ -663,10 +815,14 @@ handle_auth_user_pass_verify_allowed:
       LOGWARNING ("PF enabled, but could not allocate memory for pf_rules struct\n");
       goto handle_auth_user_pass_verify_free;
     }
-    /* Default rules */
-    _am_mysql_handle_default_pf_rules (&mysql, conf, l, pf_rules);
-    /* And now, for the rules themselves */
-    _am_mysql_handle_pf_rules (&mysql, conf, l, pf_rules);
+    if (conf->enable_pf_user_rules_query || conf->enable_pf_group_rules_query){
+      _am_mysql_handle_pf_rules_single_query (&mysql, conf, l, pf_rules);
+    }else{
+      /* Default rules */
+      _am_mysql_handle_default_pf_rules (&mysql, conf, l, pf_rules);
+      /* And now, for the rules themselves */
+      _am_mysql_handle_pf_rules (&mysql, conf, l, pf_rules);
+    }
     /* write the rules to pf file */
     pf_rules_to_file (pf_rules, pf_file);
   } 
