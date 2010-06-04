@@ -32,8 +32,9 @@
 
 struct pf_rules *
 pf_rules_new (){
-	struct pf_rules *p = am_malloc (sizeof (struct pf_rules));
-	return p;
+  struct pf_rules *p = am_malloc (sizeof (struct pf_rules));
+  am_memset (p, 0, sizeof (struct pf_rules));
+  return p;
 }
 
 void

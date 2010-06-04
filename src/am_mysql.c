@@ -587,7 +587,7 @@ _am_mysql_handle_pf_rules_do_single_query (
   char *fmt_query = NULL;
 
   if (query == NULL)
-    retun -1;
+    return -1;
 
   fmt_query = expand_query (query, expandable_vars);
 
@@ -604,7 +604,6 @@ _am_mysql_handle_pf_rules_do_single_query (
 		LOGERROR ("_am_mysql_handle_default_pf_rules_query: Failed to execute query: Error (%d): %s\n", mysql_errno(mysql), mysql_error(mysql));
 		goto _handle_pf_rules_do_single_query;
 	}
-  am_free (fmt_query);
 
 	if ((result = mysql_store_result(mysql)) == NULL)
 	{
@@ -683,6 +682,8 @@ _am_mysql_handle_pf_rules_do_single_query (
 _handle_pf_rules_do_single_query:
   if (result != NULL)
     mysql_free_result (result);
+  if (fmt_query != NULL) 
+    am_free (fmt_query);
   return rc;
 }
 
@@ -815,6 +816,7 @@ handle_auth_user_pass_verify_allowed:
       LOGWARNING ("PF enabled, but could not allocate memory for pf_rules struct\n");
       goto handle_auth_user_pass_verify_free;
     }
+    pf_rules->pf_rules_clients = pf_rules->pf_rules_subnets = NULL;
     if (conf->enable_pf_user_rules_query || conf->enable_pf_group_rules_query){
       _am_mysql_handle_pf_rules_single_query (&mysql, conf, l, pf_rules);
     }else{
