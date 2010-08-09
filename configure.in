@@ -1,6 +1,6 @@
 m4_define([openvpnmysqlauth_version_major],[0])
 m4_define([openvpnmysqlauth_version_minor],[0])
-m4_define([openvpnmysqlauth_version_micro],[1])
+m4_define([openvpnmysqlauth_version_micro],[2])
 m4_define([openvpnmysqlauth_version_extra],[])
 m4_define([openvpnmysqlauth_version],[openvpnmysqlauth_version_major().openvpnmysqlauth_version_minor().openvpnmysqlauth_version_micro()openvpnmysqlauth_version_extra()])
 
