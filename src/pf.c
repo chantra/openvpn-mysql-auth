@@ -48,29 +48,45 @@ pf_rules_free (struct pf_rules *pf_rules){
 
 int
 pf_rules_to_file (struct pf_rules *pf_rules, const char *pf_file){
+  ssize_t rc;
 	char *s;
   int fd = open (pf_file, O_WRONLY | O_CREAT | O_TRUNC, S_IRWXU);
   if (fd == -1){
-    LOGERROR ("Could not open file %s in write mode Error (%d) %s\n", pf_file, errno, strerror (errno)); 
+    LOGERROR ("Could not open file %s in write mode Error (%d) %s\n", pf_file, errno, strerror (errno));
     return -1;
   }
 	/* TODO handle exception */
 	s = strdupf ("[CLIENTS %s]\n", pf_rules->default_pf_rules_clients == DEFAULT_PF_RULES_ACCEPT ? "ACCEPT" : "DROP");
-	write (fd, s, strlen(s));
+  rc = write (fd, s, strlen(s));
 	am_free (s);
-	if (pf_rules->pf_rules_clients != NULL)
-		write (fd, pf_rules->pf_rules_clients, strlen (pf_rules->pf_rules_clients));
+  if( rc == -1 )
+    goto pf_rules_to_file_exit;
+
+	if (pf_rules->pf_rules_clients != NULL){
+		rc = write (fd, pf_rules->pf_rules_clients, strlen (pf_rules->pf_rules_clients));
+    if( rc == -1 )
+      goto pf_rules_to_file_exit;
+  }
 
 	s = strdupf ("\n[SUBNETS %s]\n", pf_rules->default_pf_rules_subnets == DEFAULT_PF_RULES_ACCEPT ? "ACCEPT" : "DROP");
-	write (fd, s, strlen(s));
+	rc = write (fd, s, strlen(s));
 	am_free (s);
-	if (pf_rules->pf_rules_subnets != NULL)
-		write (fd, pf_rules->pf_rules_subnets, strlen (pf_rules->pf_rules_subnets));
+  if( rc == -1 )
+    goto pf_rules_to_file_exit;
+
+	if (pf_rules->pf_rules_subnets != NULL){
+		rc = write (fd, pf_rules->pf_rules_subnets, strlen (pf_rules->pf_rules_subnets));
+    if( rc == -1 )
+      goto pf_rules_to_file_exit;
+  }
 
 	s = strdup ("\n[END]\n");
-	write (fd, s, strlen(s));
+	rc = write (fd, s, strlen(s));
 	am_free (s);
-	
+
+pf_rules_to_file_exit:
   close (fd);
-	return 0;
+  if( rc != -1 )
+	  return 0;
+  return 1;
 }
