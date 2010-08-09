@@ -42,7 +42,7 @@ extern int am_mysql_simple_query (char *raw_query, struct plugin_conf *conf,
 
 /**
  * Execute a query and return the value in
- * the first row result at column 0 
+ * the first row result at column 0
  * Returns NULL if:
  *  - no row found
  *  - more than one available

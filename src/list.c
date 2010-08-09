@@ -83,8 +83,8 @@ am_list_free_item( am_list_t *l, am_list_item_t *i, void (*item_free_func)( void
 /**
  * am_list_remove_item
  * Remove an item from the list. The item cell is freed
- * BUT the item data is not freed 
- * The caller will need to free it, or memory will be lost 
+ * BUT the item data is not freed
+ * The caller will need to free it, or memory will be lost
  */
 void *
 am_list_remove_item( am_list_t *l, am_list_item_t *i ){
@@ -92,11 +92,11 @@ am_list_remove_item( am_list_t *l, am_list_item_t *i ){
   if( !i ) return NULL;
   data = i->data;
   am_list_free_item( l, i, NULL );
-  return data; 
+  return data;
 }
 /**
  * am_list_remove_item_at
- * 
+ *
  */
 
 void *
@@ -104,7 +104,7 @@ am_list_remove_item_at( am_list_t *l, uint32_t index ){
   am_list_item_t *i;
   i = am_list_item_at(l, index );
   if( !i ) return NULL;
-  return am_list_remove_item( l, i ); 
+  return am_list_remove_item( l, i );
 }
 
 /**
@@ -143,7 +143,7 @@ am_list_append( am_list_t *l, void *data ){
     }
   }
   l->counter++;
-  return i; 
+  return i;
 }
 
 /**
@@ -167,7 +167,7 @@ am_list_prepend( am_list_t *l, void *data ){
     }
   }
   l->counter++;
-  return i; 
+  return i;
 }
 
 

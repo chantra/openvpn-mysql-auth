@@ -99,7 +99,7 @@ openvpn_plugin_open_v2 (unsigned int *type_mask, const char *argv[],
   if (context->conf == NULL){
     ERROR ("Could not initialize plugin configuration from file %s", configfile);
     return NULL;
-  } 
+  }
   /*
    * We are only register the plugin for which
    * we have a query defined
@@ -118,7 +118,7 @@ openvpn_plugin_open_v2 (unsigned int *type_mask, const char *argv[],
     DEBUG_PLUGIN(context, "Registered callback OPENVPN_PLUGIN_CLIENT_CONNECT\n");
   }
   if (context->conf->client_disconnect_query){
-    *type_mask |= OPENVPN_PLUGIN_MASK ( OPENVPN_PLUGIN_CLIENT_DISCONNECT ); 
+    *type_mask |= OPENVPN_PLUGIN_MASK ( OPENVPN_PLUGIN_CLIENT_DISCONNECT );
     DEBUG_PLUGIN(context, "Registered callback OPENVPN_PLUGIN_CLIENT_DISCONNECT\n");
   }
   if (context->conf->learn_address_query){
@@ -177,7 +177,7 @@ openvpn_plugin_func_v2 (openvpn_plugin_handle_t handle, const int type,
     }
     return OPENVPN_PLUGIN_FUNC_SUCCESS;
   }
-  
+
   if (type == OPENVPN_PLUGIN_LEARN_ADDRESS){
     DEBUG_PLUGIN(context, "OPENVPN_PLUGIN_LEARN_ADDRESS received\n");
     dump_env (envp);

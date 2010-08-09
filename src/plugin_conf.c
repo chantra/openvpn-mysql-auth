@@ -50,9 +50,9 @@ plugin_conf_new(const char *file)
 	struct plugin_conf *conf;
 	char name[BUFSIZ], value[BUFSIZ];
 
-	if ((ffd = fopen(file, "r")) == NULL) 
+	if ((ffd = fopen(file, "r")) == NULL)
 		return NULL;
-	
+
 	conf = am_malloc (sizeof (struct plugin_conf));
   am_memset (conf, 0, sizeof (struct plugin_conf));
 	/* init default values */
@@ -67,7 +67,7 @@ plugin_conf_new(const char *file)
 		if (feof(ffd)) break;
 		/* check that we match name and value or go onto next line*/
 		if (fscanf(ffd, "%s %[^\n]\n", name, value) != 2) continue;
-		
+
 		if (!strcmp(name, "hostname")) /* can be null (if unix socket) */
 		{
 			if (strcmp (value, "none") == 0)
@@ -105,7 +105,7 @@ plugin_conf_new(const char *file)
 			{
 				conf->s_path = (char*) malloc(sizeof(char) * strlen(value) + 1);
 				strncpy(conf->s_path, value, strlen(value)+1);
-			}   
+			}
 		}else if (!strcmp (name, "debug_sql")){
       conf->debug_sql = is_true (value);
     }else if (!strcmp (name, "tls_verify_query")){
@@ -181,11 +181,11 @@ plugin_conf_free (struct plugin_conf *conf)
 	if (conf == NULL)
 		return;
 
-	FREE_IF_NOT_NULL (conf->hostname);	
-	FREE_IF_NOT_NULL (conf->login);	
-	FREE_IF_NOT_NULL (conf->passw);	
-	FREE_IF_NOT_NULL (conf->db);	
-	FREE_IF_NOT_NULL (conf->s_path);	
+	FREE_IF_NOT_NULL (conf->hostname);
+	FREE_IF_NOT_NULL (conf->login);
+	FREE_IF_NOT_NULL (conf->passw);
+	FREE_IF_NOT_NULL (conf->db);
+	FREE_IF_NOT_NULL (conf->s_path);
 	FREE_IF_NOT_NULL (conf->tls_verify_query);
 	FREE_IF_NOT_NULL (conf->tls_final_query);
 	FREE_IF_NOT_NULL (conf->client_connect_query);
@@ -207,8 +207,8 @@ plugin_conf_free (struct plugin_conf *conf)
 	FREE_IF_NOT_NULL (conf->auth_user_pass_verify_query);
 	FREE_IF_NOT_NULL (conf->auth_user_pass_verify_user_access_query);
 	FREE_IF_NOT_NULL (conf->auth_user_pass_verify_group_access_query);
-	
-	FREE_IF_NOT_NULL (conf);	
+
+	FREE_IF_NOT_NULL (conf);
 }
 
 int
@@ -227,7 +227,7 @@ int
 plugin_conf_pf_enabled_group (struct plugin_conf *conf){
   if ( conf != NULL
       &&
-      ( conf->enable_pf_group_rules_query || 
+      ( conf->enable_pf_group_rules_query ||
         (conf->enable_pf_clients_group_default_rules_query && conf->enable_pf_clients_group_rules_query
         && conf->enable_pf_subnets_group_default_rules_query && conf->enable_pf_subnets_group_rules_query)
       ))

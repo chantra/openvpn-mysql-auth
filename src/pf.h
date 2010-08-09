@@ -29,7 +29,7 @@ enum default_pf_rules {
 
 
 struct pf_rules{
-  enum default_pf_rules default_pf_rules_clients; 
+  enum default_pf_rules default_pf_rules_clients;
   enum default_pf_rules default_pf_rules_subnets;
   char *pf_rules_clients;
   char *pf_rules_subnets;

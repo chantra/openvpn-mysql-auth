@@ -57,7 +57,7 @@ expand_query (char *query, am_list_t *expandable_var){
 	char *res = NULL;
 	char *key, *value;
 	am_list_item_t *node;
-	res = strdup (query);	
+	res = strdup (query);
 
 	for (node = expandable_var->first; node; node = node->next){
 		if (node->data == NULL
@@ -113,20 +113,20 @@ create_expandable_variable_list (MYSQL *mysql, const char *envp[], const char *a
 		escaped_password_length = mysql_real_escape_string (mysql, escaped_password, password, strlen (password));
 	}
 
-	am_list_append (l, kvp_new_with_kv (EV_DUP ("time_now"), strdupf ("%d", t)));	
-	am_list_append (l, kvp_new_with_kv (EV_DUP ("username"), NULL_OR_DUP (username)));	
-	am_list_append (l, kvp_new_with_kv (EV_DUP ("password"), NULL_OR_DUP (password)));	
-	am_list_append (l, kvp_new_with_kv (EV_DUP ("escaped_username"), NULL_OR_DUP (escaped_username)));	
-	am_list_append (l, kvp_new_with_kv (EV_DUP ("escaped_password"), NULL_OR_DUP (escaped_password)));	
-	am_list_append (l, kvp_new_with_kv (EV_DUP ("trusted_port"), NULL_OR_DUP (get_env ("trusted_port", envp))));	
-	am_list_append (l, kvp_new_with_kv (EV_DUP ("trusted_ip"), NULL_OR_DUP (get_env ("trusted_ip", envp))));	
-	am_list_append (l, kvp_new_with_kv (EV_DUP ("time_unix"), NULL_OR_DUP (get_env ("time_unix", envp))));	
-	am_list_append (l, kvp_new_with_kv (EV_DUP ("ifconfig_pool_remote_ip"), NULL_OR_DUP (get_env ("ifconfig_pool_remote_ip", envp))));	
-	am_list_append (l, kvp_new_with_kv (EV_DUP ("ifconfig_pool_local_ip"), NULL_OR_DUP (get_env ("ifconfig_pool_local_ip", envp))));	
-	am_list_append (l, kvp_new_with_kv (EV_DUP ("ifconfig_local"), NULL_OR_DUP (get_env ("ifconfig_local", envp))));	
-	am_list_append (l, kvp_new_with_kv (EV_DUP ("time_duration"), NULL_OR_DUP (get_env ("time_duration", envp))));	
-	am_list_append (l, kvp_new_with_kv (EV_DUP ("bytes_sent"), NULL_OR_DUP (get_env ("bytes_sent", envp))));	
-	am_list_append (l, kvp_new_with_kv (EV_DUP ("bytes_received"), NULL_OR_DUP (get_env ("bytes_received", envp))));	
+	am_list_append (l, kvp_new_with_kv (EV_DUP ("time_now"), strdupf ("%d", t)));
+	am_list_append (l, kvp_new_with_kv (EV_DUP ("username"), NULL_OR_DUP (username)));
+	am_list_append (l, kvp_new_with_kv (EV_DUP ("password"), NULL_OR_DUP (password)));
+	am_list_append (l, kvp_new_with_kv (EV_DUP ("escaped_username"), NULL_OR_DUP (escaped_username)));
+	am_list_append (l, kvp_new_with_kv (EV_DUP ("escaped_password"), NULL_OR_DUP (escaped_password)));
+	am_list_append (l, kvp_new_with_kv (EV_DUP ("trusted_port"), NULL_OR_DUP (get_env ("trusted_port", envp))));
+	am_list_append (l, kvp_new_with_kv (EV_DUP ("trusted_ip"), NULL_OR_DUP (get_env ("trusted_ip", envp))));
+	am_list_append (l, kvp_new_with_kv (EV_DUP ("time_unix"), NULL_OR_DUP (get_env ("time_unix", envp))));
+	am_list_append (l, kvp_new_with_kv (EV_DUP ("ifconfig_pool_remote_ip"), NULL_OR_DUP (get_env ("ifconfig_pool_remote_ip", envp))));
+	am_list_append (l, kvp_new_with_kv (EV_DUP ("ifconfig_pool_local_ip"), NULL_OR_DUP (get_env ("ifconfig_pool_local_ip", envp))));
+	am_list_append (l, kvp_new_with_kv (EV_DUP ("ifconfig_local"), NULL_OR_DUP (get_env ("ifconfig_local", envp))));
+	am_list_append (l, kvp_new_with_kv (EV_DUP ("time_duration"), NULL_OR_DUP (get_env ("time_duration", envp))));
+	am_list_append (l, kvp_new_with_kv (EV_DUP ("bytes_sent"), NULL_OR_DUP (get_env ("bytes_sent", envp))));
+	am_list_append (l, kvp_new_with_kv (EV_DUP ("bytes_received"), NULL_OR_DUP (get_env ("bytes_received", envp))));
 
 	am_free (escaped_username);
 	am_free (escaped_password);
@@ -162,7 +162,7 @@ am_mysql_prepare_mysql (MYSQL *mysql, struct plugin_conf *conf){
 		return -1;
 	}
 
-	/* Potentially try to read group options if any are set */	
+	/* Potentially try to read group options if any are set */
 	if (mysql_options(mysql, MYSQL_READ_DEFAULT_GROUP, "openvpn-mysql-auth") != 0){
 		LOGWARNING ("Could not read options for group *openvpn-mysql-auth*\n");
 	}
@@ -182,7 +182,7 @@ am_mysql_prepare_mysql (MYSQL *mysql, struct plugin_conf *conf){
  * Return formatted query, NULL on error
  */
 char *
-am_mysql_prepare_query (MYSQL *mysql, char *raw_query, 
+am_mysql_prepare_query (MYSQL *mysql, char *raw_query,
                         struct client_context *client_context,
                         const char *envp[], const char *argv[]){
   char *q = NULL;
@@ -260,14 +260,14 @@ am_mysql_simple_query (char *raw_query, struct plugin_conf *conf,
     rc = -1;
     LOGERROR ("Failed to expand query %s\n", raw_query);
     goto simple_query_free;
-  }  
+  }
   rc = _am_mysql_simple_query (&mysql, q);
 
 simple_query_free:
 	/* Free resources */
 	mysql_close(&mysql);
   if (q != NULL)
-  	am_free (q);
+    am_free (q);
 	return rc;
 }
 /**
@@ -284,7 +284,7 @@ _am_mysql_query_return_row_0 (MYSQL *mysql, char *fmt_query){
   char *res = NULL;
   my_ulonglong  num_rows;
 
- 
+
 	/* Now for the query itself */
 	if (mysql_query(mysql, fmt_query))
 	{
@@ -375,14 +375,14 @@ am_mysql_query_return_row_0 (char *raw_query, struct plugin_conf *conf,
     res = NULL;
     LOGERROR ("Failed to expand query %s\n", raw_query);
     goto query_return_row_0_free;
-  } 
+  }
   res = _am_mysql_query_return_row_0 (&mysql, q);
 
 query_return_row_0_free:
 	/* Free resources */
 	mysql_close(&mysql);
   if (q != NULL)
-  	am_free (q);
+    am_free (q);
 	return res;
 }
 
@@ -393,7 +393,7 @@ query_return_row_0_free:
 enum default_pf_rules
 _am_calculate_pf_rule (enum default_pf_rules current, char *mysql_result){
   if (current == DEFAULT_PF_RULES_UNKNOWN)
-    return pf_default_drop_or_accept (mysql_result); 
+    return pf_default_drop_or_accept (mysql_result);
   return current || pf_default_drop_or_accept (mysql_result);
 }
 
@@ -415,7 +415,7 @@ _am_mysql_handle_default_pf_rules (
    * First we get the default rules from user query
    * If user as default rules define (accept or drop), the we skip group rules
    * Other wise we check group rules
-   * Finally, if user rules are still not defined, 
+   * Finally, if user rules are still not defined,
    * we get them from the configuration defaults
    */
   /* set default rules to unknown */
@@ -429,7 +429,7 @@ _am_mysql_handle_default_pf_rules (
       LOGERROR ("Could not set expandable variables for pf clients default rules at user level\n");
     }else{
       query_res = _am_mysql_query_return_row_0 (mysql, q);
-      am_free (q);  
+      am_free (q);
       if (query_res != NULL){
         pf_rules->default_pf_rules_clients = _am_calculate_pf_rule (pf_rules->default_pf_rules_clients, query_res);
         am_free (query_res);
@@ -456,7 +456,7 @@ _am_mysql_handle_default_pf_rules (
         LOGERROR ("Could not set expandable variables for pf clients default rules at group level\n");
       }else{
         query_res = _am_mysql_query_return_row_0 (mysql, q);
-        am_free (q);  
+        am_free (q);
         if (query_res != NULL){
           pf_rules->default_pf_rules_clients = _am_calculate_pf_rule (pf_rules->default_pf_rules_clients, query_res);
           am_free (query_res);
@@ -469,7 +469,7 @@ _am_mysql_handle_default_pf_rules (
         LOGERROR ("Could not set expandable variables for pf subnets default rules at group level\n");
       }else{
         query_res = _am_mysql_query_return_row_0 (mysql, q);
-        am_free (q);  
+        am_free (q);
         if (query_res != NULL){
           pf_rules->default_pf_rules_subnets = _am_calculate_pf_rule (pf_rules->default_pf_rules_subnets, query_res);
           am_free (query_res);
@@ -501,7 +501,7 @@ _am_mysql_handle_pf_rules (
    * First we get the rules from user query
    * If no user rules are found
    * we check group rules
-   * Finally, if user rules are still not defined, 
+   * Finally, if user rules are still not defined,
    * we get them from the configuration defaults
    */
   /* set default rules to unknown */
@@ -515,7 +515,7 @@ _am_mysql_handle_pf_rules (
       LOGERROR ("Could not set expandable variables for pf clients rules at user level\n");
     }else{
       query_res = _am_mysql_query_return_row_0 (mysql, q);
-      am_free (q);  
+      am_free (q);
       if (query_res != NULL){
         pf_rules->pf_rules_clients = query_res;
       }
@@ -526,7 +526,7 @@ _am_mysql_handle_pf_rules (
       LOGERROR ("Could not set expandable variables for pf subnets rules at user level\n");
     }else{
       query_res = _am_mysql_query_return_row_0 (mysql, q);
-      am_free (q);  
+      am_free (q);
       if (query_res != NULL){
         pf_rules->pf_rules_subnets = query_res;
       }
@@ -540,7 +540,7 @@ _am_mysql_handle_pf_rules (
         LOGERROR ("Could not set expandable variables for pf clients rules at group level\n");
       }else{
         query_res = _am_mysql_query_return_row_0 (mysql, q);
-        am_free (q);  
+        am_free (q);
         if (query_res != NULL){
           pf_rules->pf_rules_clients = query_res;
         }
@@ -552,7 +552,7 @@ _am_mysql_handle_pf_rules (
         LOGERROR ("Could not set expandable variables for pf subnets rules at group level\n");
       }else{
         query_res = _am_mysql_query_return_row_0 (mysql, q);
-        am_free (q);  
+        am_free (q);
         if (query_res != NULL){
           pf_rules->pf_rules_subnets = query_res;
         }
@@ -682,7 +682,7 @@ _am_mysql_handle_pf_rules_do_single_query (
 _handle_pf_rules_do_single_query:
   if (result != NULL)
     mysql_free_result (result);
-  if (fmt_query != NULL) 
+  if (fmt_query != NULL)
     am_free (fmt_query);
   return rc;
 }
@@ -723,7 +723,7 @@ _am_mysql_handle_pf_rules_single_query (
  * handle user auth
  */
 int
-am_mysql_handle_auth_user_pass_verify (struct plugin_conf *conf, struct client_context *client_context, 
+am_mysql_handle_auth_user_pass_verify (struct plugin_conf *conf, struct client_context *client_context,
                                         const char *envp[], const char *argv[]){
 
 	MYSQL					mysql;
@@ -827,17 +827,17 @@ handle_auth_user_pass_verify_allowed:
     }
     /* write the rules to pf file */
     pf_rules_to_file (pf_rules, pf_file);
-  } 
+  }
 handle_auth_user_pass_verify_free:
   /* Free resources */
   if (l != NULL)
-    free_expandable_variable_list (l); 
+    free_expandable_variable_list (l);
   if (result != NULL)
     mysql_free_result(result);
   mysql_close(&mysql);
   if (q != NULL)
     am_free (q);
-  pf_rules_free (pf_rules); 
+  pf_rules_free (pf_rules);
   return rc;
 }
 
