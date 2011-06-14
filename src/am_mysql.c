@@ -760,7 +760,7 @@ am_mysql_handle_auth_user_pass_verify (struct plugin_conf *conf, struct client_c
   }
   am_list_prepend (l, kvp_new_with_kv (EV_DUP ("user_id"), NULL_OR_DUP (client_context->user_id)));
 
-  if (conf->auth_user_pass_verify_user_access_query == NULL && conf->auth_user_pass_verify_user_access_query){
+  if (conf->auth_user_pass_verify_user_access_query == NULL && conf->auth_user_pass_verify_group_access_query == NULL){
     /** There is no access control, return success */
     rc = 1;
     goto handle_auth_user_pass_verify_allowed;
