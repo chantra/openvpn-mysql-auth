@@ -12,5 +12,6 @@ mysql_auth_SOURCES = plugin_conf.c plugin_conf.h \
 libopenvpn_mysql_auth_la_SOURCES = mysql-auth.c \
 				$(mysql_auth_SOURCES)
 
-
+libopenvpn_mysql_auth_la_CFLAGS = $(MYSQL_CFLAGS) 
+libopenvpn_mysql_auth_la_LDFLAGS = $(MYSQL_LIBS) 
 

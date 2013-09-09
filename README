@@ -1,7 +1,12 @@
 Dependencies:
 ------------
 
+Debian:
 libmysql-client-dev
+libtool
+
+CentOS:
+mysql-devel
 libtool
 
 Installation:

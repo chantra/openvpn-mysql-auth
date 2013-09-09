@@ -7,4 +7,5 @@ testplugin_SOURCES = testplugin.c
 
 ldadd = $(top_srcdir)/src/.libs/libopenvpn-mysql-auth.a
 
-testplugin_LDADD = $(ldadd)
+testplugin_CFLAGS = $(MYSQL_CFLAGS)
+testplugin_LDADD = $(ldadd) $(MYSQL_LIBS)
