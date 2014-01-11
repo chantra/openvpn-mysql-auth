@@ -92,8 +92,7 @@ am_list_t *
 create_expandable_variable_list (MYSQL *mysql, const char *envp[], const char *argv[]){
 	time_t t;
 	char      *escaped_username = NULL;
-  char      *escaped_password = NULL;
-	unsigned long escaped_username_length, escaped_password_length;
+	char      *escaped_password = NULL;
 	const char *username, *password;
 	am_list_t *l = am_list_new ();
 
@@ -106,11 +105,11 @@ create_expandable_variable_list (MYSQL *mysql, const char *envp[], const char *a
 	password = get_env ("password", envp);
 	if (username != NULL){
 		escaped_username = (char *) am_malloc (sizeof(char) * (strlen (username) * 2 + 1));
-		escaped_username_length = mysql_real_escape_string (mysql, escaped_username, username, strlen (username));
+		mysql_real_escape_string (mysql, escaped_username, username, strlen (username));
 	}
 	if (password != NULL){
 		escaped_password = (char *) am_malloc (sizeof(char) * (strlen (password) * 2 + 1));
-		escaped_password_length = mysql_real_escape_string (mysql, escaped_password, password, strlen (password));
+		mysql_real_escape_string (mysql, escaped_password, password, strlen (password));
 	}
 
 	am_list_append (l, kvp_new_with_kv (EV_DUP ("time_now"), strdupf ("%d", t)));
