@@ -75,23 +75,27 @@ plugin_conf_new(const char *file)
 			else
 			{
 				conf->hostname = am_malloc(sizeof(char) * strlen(value) + 1);
-				strncpy(conf->hostname, value, strlen(value)+1);
+				//strncpy(conf->hostname, value, strlen(value)+1);
+				strcpy(conf->hostname, value);
 			}
 		}
 		else if (!strcmp(name, "login"))
 		{
 			conf->login = (char*) malloc(sizeof(char) * strlen(value) + 1);
-			strncpy(conf->login, value, strlen(value)+1);
+			//strncpy(conf->login, value, strlen(value)+1);
+			strcpy(conf->login, value);
 		}
 		else if (!strcmp(name, "password"))
 		{
 			conf->passw = (char*) malloc(sizeof(char) * strlen(value) + 1);
-			strncpy(conf->passw, value, strlen(value)+1);
+			//strncpy(conf->passw, value, strlen(value)+1);
+			strcpy(conf->passw, value);
 		}
 		else if (!strcmp(name, "db"))
 		{
 			conf->db = (char*) malloc(sizeof(char) * strlen(value) + 1);
-			strncpy(conf->db, value, strlen(value)+1);
+			//strncpy(conf->db, value, strlen(value)+1);
+			strcpy(conf->db, value);
 		}
 		else if (!strcmp(name, "port"))
 		{
@@ -104,7 +108,8 @@ plugin_conf_new(const char *file)
 			else
 			{
 				conf->s_path = (char*) malloc(sizeof(char) * strlen(value) + 1);
-				strncpy(conf->s_path, value, strlen(value)+1);
+				//strncpy(conf->s_path, value, strlen(value)+1);
+				strcpy(conf->s_path, value);
 			}
 		}else if (!strcmp (name, "debug_sql")){
       conf->debug_sql = is_true (value);
